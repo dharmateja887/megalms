@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getDisplayName } from '../../utils/user.js'
 
 const payouts = [
   { label: 'Last payout', value: '₹2,40,000' },
@@ -7,7 +8,7 @@ const payouts = [
 ]
 
 function Settings({ user }) {
-  const [name, setName] = useState(user.name || '')
+  const [name, setName] = useState(getDisplayName(user))
   const [email, setEmail] = useState(user.email || '')
   const [bank, setBank] = useState('')
   const [saved, setSaved] = useState(false)

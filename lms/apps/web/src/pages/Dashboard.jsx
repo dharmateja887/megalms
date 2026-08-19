@@ -7,6 +7,7 @@ import Sales from '../components/dashboard/Sales.jsx'
 import Analytics from '../components/dashboard/Analytics.jsx'
 import Settings from '../components/dashboard/Settings.jsx'
 import Profile from '../components/dashboard/Profile.jsx'
+import { getDisplayName, getUserInitials, readStoredUser } from '../utils/user.js'
 
 const navItems = [
   { key: 'overview', label: 'Dashboard', icon: 'grid' },
@@ -122,9 +123,9 @@ function Dashboard() {
   const [page, setPage] = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem('qt_nxt_user') || '{}')
-  const nameOrPhone = user.name || user.email || user.phone || 'Creator'
-  const firstName = String(nameOrPhone).split('@')[0]
+  const user = readStoredUser()
+  const displayName = getDisplayName(user)
+  const initials = getUserInitials(user)
 
   function logout() {
     localStorage.removeItem('qt_nxt_user')
@@ -203,8 +204,8 @@ function Dashboard() {
               <span className="dash-dot" />
             </button>
             <div className="dash-user">
-              <span className="avatar">{firstName.slice(0, 2).toUpperCase()}</span>
-              <span className="dash-user-name">{firstName}</span>
+              <span className="avatar">{initials}</span>
+              <span className="dash-user-name">{displayName}</span>
               <Icon name="chevron" />
             </div>
           </div>
@@ -212,7 +213,7 @@ function Dashboard() {
 
         <main className="dash-content">
           <div key={page} className="dash-page">
-            {page === 'overview' && <Overview userName={firstName} />}
+            {page === 'overview' && <Overview userName={displayName} />}
             {page === 'profile' && <Profile user={user} />}
             {page === 'products' && <Products />}
             {page === 'students' && <Students />}

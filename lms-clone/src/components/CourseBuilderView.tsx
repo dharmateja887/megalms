@@ -563,7 +563,7 @@ export function CourseBuilderView() {
               className="newItemBtn p-2 text-center text-[#4E5DE0] cursor-pointer border-t border-[#ECEEEF] py-3 flex items-center justify-center gap-2 hover:bg-[#F7F9FA]"
             >
               <Plus size={16} />
-              <span>Add new chapter</span>
+              <span>Add new item</span>
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { getUserInitials } from '../utils/user.js'
 
 function useLoginSuccess(redirectTo = '/') {
   const navigate = useNavigate()
@@ -123,6 +124,9 @@ function Login() {
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [sentOtp, setSentOtp] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [avatar, setAvatar] = useState('')
   const [error, setError] = useState('')
   const [timer, setTimer] = useState(0)
   const [success, setSuccess] = useLoginSuccess(redirectTo)
@@ -153,18 +157,84 @@ function Login() {
       setError('Incorrect OTP. Please try again.')
       return
     }
-    localStorage.setItem('qt_nxt_user', JSON.stringify({ phone }))
-    setSuccess('Login successful!')
+    setError('')
+    setStep('profile')
+  }
+
+  function handleAvatarChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setAvatar(String(reader.result || ''))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  async function completeProfile(e) {
+    e.preventDefault()
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please enter your first and last name.')
+      return
+    }
+
+    setError('')
+
+    const profile = {
+      phone,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      avatar,
+    }
+
+    try {
+      const response = await fetch('/api/login-profiles/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profile),
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body?.detail || body?.error || 'Unable to save profile.')
+      }
+
+      const savedProfile = await response.json()
+      localStorage.setItem(
+        'qt_nxt_user',
+        JSON.stringify({
+          ...profile,
+          name: savedProfile.fullName || `${profile.firstName} ${profile.lastName}`.trim(),
+          fullName: savedProfile.fullName || '',
+        }),
+      )
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Unable to save profile.')
+      return
+    }
+
+    setSuccess('Profile completed successfully!')
   }
 
   return (
     <AuthShell
       isLogin
-      title={step === 'phone' ? 'Login with mobile number' : 'Verify your number'}
+      title={
+        step === 'phone'
+          ? 'Login with mobile number'
+          : step === 'otp'
+            ? 'Verify your number'
+            : 'Complete your profile'
+      }
       subtitle={
         step === 'phone'
           ? 'Enter your 10-digit mobile number to get started.'
-          : `Enter the 6-digit OTP sent to +91 ${phone}.`
+          : step === 'otp'
+            ? `Enter the 6-digit OTP sent to +91 ${phone}.`
+            : 'Complete your profile so your name appears in the navbar.'
       }
       footerText=""
     >
@@ -188,6 +258,50 @@ function Login() {
           </label>
           <button type="submit" className="btn btn-primary btn-block">
             Send OTP
+          </button>
+        </form>
+      ) : step === 'profile' ? (
+        <form className="auth-form" onSubmit={completeProfile}>
+          {error && <div className="auth-error">{error}</div>}
+          <div className="profile-complete-head">
+            <div className="profile-complete-avatar">
+              {avatar ? (
+                <img src={avatar} alt="Profile preview" />
+              ) : (
+                getUserInitials({ firstName, lastName })
+              )}
+            </div>
+            <label className="profile-photo-edit">
+              <input type="file" accept="image/*" onChange={handleAvatarChange} />
+              Edit photo
+            </label>
+          </div>
+          <div className="profile-name-grid">
+            <label className="field">
+              <span>First name</span>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                autoComplete="given-name"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Last name</span>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                autoComplete="family-name"
+                required
+              />
+            </label>
+          </div>
+          <button type="submit" className="btn btn-primary btn-block">
+            Complete login
           </button>
         </form>
       ) : (

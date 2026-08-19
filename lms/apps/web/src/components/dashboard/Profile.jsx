@@ -1,12 +1,9 @@
+import { getDisplayName, getUserInitials } from '../../utils/user.js'
+
 function Profile({ user }) {
-  const name = user.name || user.phone || 'Creator'
+  const name = getDisplayName(user)
   const email = user.email || 'Not set'
-  const initials = String(name)
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  const initials = getUserInitials(user)
 
   return (
     <>

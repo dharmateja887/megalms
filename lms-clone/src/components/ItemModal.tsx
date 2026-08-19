@@ -49,6 +49,8 @@ export type ItemSubmitData = {
   quizQuestions?: QuizQuestion[];
 };
 
+type VideoSourceType = "upload" | "youtube" | "vimeo" | "sprout" | "link" | "embed";
+
 type ItemModalProps = {
   type: ItemType;
   onClose: () => void;
@@ -58,7 +60,7 @@ type ItemModalProps = {
 
 const meta: Record<ItemType, { title: string; needsUpload?: boolean }> = {
   pdf: { title: "New PDF", needsUpload: true },
-  video: { title: "New Video", needsUpload: true },
+  video: { title: "New video", needsUpload: true },
   audio: { title: "New Audio", needsUpload: true },
   scorm: { title: "New SCORM", needsUpload: true },
   file: { title: "New File", needsUpload: true },
@@ -73,10 +75,33 @@ const meta: Record<ItemType, { title: string; needsUpload?: boolean }> = {
   form: { title: "New Form" },
 };
 
+function inferVideoSourceType(initialUrl?: string, initialFileData?: string): VideoSourceType {
+  const value = `${initialUrl || ""}`.trim();
+  if (initialFileData) return "upload";
+  if (!value) return "upload";
+  if (value.includes("<iframe") || value.includes("<embed")) return "embed";
+  if (/youtube\.com|youtu\.be/i.test(value)) return "youtube";
+  if (/vimeo\.com/i.test(value)) return "vimeo";
+  if (/sproutvideo\.com/i.test(value)) return "sprout";
+  return "link";
+}
+
+const videoSourceOptions: Array<{ value: VideoSourceType; label: string }> = [
+  { value: "upload", label: "Upload" },
+  { value: "youtube", label: "YouTube" },
+  { value: "vimeo", label: "Vimeo" },
+  { value: "sprout", label: "Sprout Video" },
+  { value: "link", label: "Link" },
+  { value: "embed", label: "Embed code" },
+];
+
 export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalProps) {
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [url, setUrl] = useState(initialData?.url ?? "");
+  const [videoSourceType, setVideoSourceType] = useState<VideoSourceType>(
+    inferVideoSourceType(initialData?.url, initialData?.fileData),
+  );
   const [startDate, setStartDate] = useState(initialData?.startDate ?? "");
   const [endDate, setEndDate] = useState(initialData?.endDate ?? "");
   const [duration, setDuration] = useState(initialData?.duration ?? "");
@@ -114,7 +139,20 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
     e.preventDefault();
     let fileData: string | undefined;
     let fileMeta: FileMeta | undefined = existingFile;
-    if (file) {
+    if (type === "video" && videoSourceType !== "upload") {
+      fileData = undefined;
+      fileMeta = undefined;
+    }
+
+    if (type === "video" && videoSourceType === "upload" && file) {
+      try {
+        const result = await courseApi.uploadFile(file);
+        fileData = result.url;
+        fileMeta = { name: result.name, size: result.size, type: result.type };
+      } catch (err) {
+        console.error("File upload failed", err);
+      }
+    } else if (file) {
       try {
         const result = await courseApi.uploadFile(file);
         fileData = result.url;
@@ -123,15 +161,22 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
         console.error("File upload failed", err);
       }
     }
+    const resolvedFileData =
+      fileData !== undefined
+        ? fileData
+        : type === "video" && videoSourceType !== "upload"
+          ? undefined
+          : initialData?.fileData;
+
     onSubmit?.({
       title: title.trim(),
       description: description.trim() || undefined,
-      url: url.trim() || undefined,
+      url: type === "video" && videoSourceType === "upload" ? (url.trim() || undefined) : url.trim() || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       duration: duration || undefined,
       fileMeta,
-      fileData: fileData ?? initialData?.fileData,
+      fileData: resolvedFileData,
       quizQuestions: type === "quiz" ? quizQuestions : undefined,
     });
     onClose();
@@ -165,42 +210,131 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
             {needsUpload && (
               <div>
                 <label className="block text-sm font-medium text-[#0F1013] mb-1.5">
-                  {type === "video" ? "Upload video or YouTube/Vimeo URL" : `Upload ${type.toUpperCase()} file`} *
+                  {type === "video" ? "Video source" : `Upload ${type.toUpperCase()} file`} *
                 </label>
-                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#C9CED3] bg-[#F8F9FA] px-4 py-8 cursor-pointer hover:border-[#4E5DE0]">
-                  <Upload size={24} className="text-[#9AA1A8]" />
-                  <span className="text-sm text-[#393F41] font-medium">
-                    {file
-                      ? file.name
-                      : existingFile
-                        ? `Already uploaded: ${existingFile.name}`
-                        : "Click to browse or drag & drop"}
-                  </span>
-                  {type === "video" && (
-                    <span className="text-xs text-[#6B7280]">Videos are secure, non-downloadable, and support YouTube/Vimeo embeds.</span>
-                  )}
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  />
-                </label>
+                {type === "video" ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {videoSourceOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
+                            videoSourceType === option.value
+                              ? "border-[#4E5DE0] bg-[#F2F4FF] text-[#4E5DE0]"
+                              : "border-[#C9CED3] bg-white text-[#393F41] hover:border-[#4E5DE0]"
+                          }`}
+                          onClick={() => setVideoSourceType(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {videoSourceType === "upload" ? (
+                      <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#C9CED3] bg-[#F8F9FA] px-4 py-8 cursor-pointer hover:border-[#4E5DE0]">
+                        <Upload size={24} className="text-[#9AA1A8]" />
+                        <span className="text-sm text-[#393F41] font-medium">
+                          {file
+                            ? file.name
+                            : existingFile
+                              ? `Already uploaded: ${existingFile.name}`
+                              : "Click to browse or drag & drop"}
+                        </span>
+                        <span className="text-xs text-[#6B7280]">
+                          Uploaded videos are stored securely and previewed with a thumbnail first.
+                        </span>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                        />
+                      </label>
+                    ) : videoSourceType === "embed" ? (
+                      <div>
+                        <label className="block text-sm font-medium text-[#0F1013] mb-1.5">Embed code</label>
+                        <textarea
+                          rows={5}
+                          className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0] resize-none"
+                          placeholder='<iframe src="https://..."></iframe>'
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-sm font-medium text-[#0F1013] mb-1.5">
+                          {videoSourceType === "youtube"
+                            ? "YouTube URL"
+                            : videoSourceType === "vimeo"
+                              ? "Vimeo URL"
+                              : videoSourceType === "sprout"
+                                ? "Sprout Video URL"
+                                : "Video URL"}
+                        </label>
+                        <input
+                          type="url"
+                          className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                          placeholder={
+                            videoSourceType === "youtube"
+                              ? "Paste a YouTube link"
+                              : videoSourceType === "vimeo"
+                                ? "Paste a Vimeo link"
+                                : videoSourceType === "sprout"
+                                  ? "Paste a SproutVideo link"
+                                  : "Paste a video link"
+                          }
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                        />
+                        <p className="mt-1.5 text-xs text-[#6B7280]">
+                          {videoSourceType === "youtube"
+                            ? "Paste a YouTube watch or short link."
+                            : videoSourceType === "vimeo"
+                              ? "Paste a Vimeo video link."
+                              : videoSourceType === "sprout"
+                                ? "Paste a Sprout Video link."
+                                : "Paste a direct video link or page URL."}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#C9CED3] bg-[#F8F9FA] px-4 py-8 cursor-pointer hover:border-[#4E5DE0]">
+                    <Upload size={24} className="text-[#9AA1A8]" />
+                    <span className="text-sm text-[#393F41] font-medium">
+                      {file
+                        ? file.name
+                        : existingFile
+                          ? `Already uploaded: ${existingFile.name}`
+                          : "Click to browse or drag & drop"}
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                )}
               </div>
             )}
 
-            {type === "video" && (
-              <div>
-                <label className="block text-sm font-medium text-[#0F1013] mb-1.5">Video URL</label>
-                <input
-                  type="url"
-                  className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
-                  placeholder="Paste a YouTube, Vimeo, or direct video link"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                />
-                <p className="mt-1.5 text-xs text-[#6B7280]">
-                  Supported: YouTube, Vimeo, and direct video files like MP4 or WebM. If a site blocks embeds, it may not play in the preview pane.
-                </p>
+            {type === "video" && videoSourceType === "upload" && (
+              <div className="flex items-center justify-between gap-3 rounded border border-[#ECEEEF] bg-[#F8F9FA] px-4 py-3">
+                <div className="text-xs text-[#6B7280]">
+                  Want to replace the selected file? Choose a new one above, then upload.
+                </div>
+                <button
+                  type="button"
+                  className="border border-[#C9CED3] bg-white px-3 py-2 text-sm font-medium text-[#393F41] hover:bg-[#F7F9FA]"
+                  onClick={() => {
+                    setFile(null);
+                    setUrl("");
+                  }}
+                >
+                  Clear
+                </button>
               </div>
             )}
 

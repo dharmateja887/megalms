@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Course, CourseChapter, CourseItem, QuizAttempt
+from .models import Course, CourseChapter, CourseItem, LoginProfile, QuizAttempt
 
 
 def epoch_ms(dt):
@@ -86,6 +86,53 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
 
     def get_createdAt(self, obj):
         return epoch_ms(obj.created_at)
+
+
+class LoginProfileSerializer(serializers.ModelSerializer):
+    firstName = serializers.CharField(source="first_name")
+    lastName = serializers.CharField(source="last_name")
+    fullName = serializers.CharField(source="full_name", required=False, read_only=True)
+    avatar = serializers.CharField(required=False, allow_blank=True)
+    createdAt = serializers.SerializerMethodField()
+    updatedAt = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LoginProfile
+        fields = [
+            "id",
+            "phone",
+            "firstName",
+            "lastName",
+            "fullName",
+            "avatar",
+            "createdAt",
+            "updatedAt",
+        ]
+
+    def create(self, validated_data):
+        profile, _ = LoginProfile.objects.update_or_create(
+            phone=validated_data["phone"],
+            defaults={
+                "first_name": validated_data["first_name"],
+                "last_name": validated_data["last_name"],
+                "avatar": validated_data.get("avatar", ""),
+            },
+        )
+        return profile
+
+    def update(self, instance, validated_data):
+        instance.phone = validated_data.get("phone", instance.phone)
+        instance.first_name = validated_data.get("first_name", instance.first_name)
+        instance.last_name = validated_data.get("last_name", instance.last_name)
+        instance.avatar = validated_data.get("avatar", instance.avatar)
+        instance.save()
+        return instance
+
+    def get_createdAt(self, obj):
+        return epoch_ms(obj.created_at)
+
+    def get_updatedAt(self, obj):
+        return epoch_ms(obj.updated_at)
 
 
 class CourseChapterSerializer(serializers.ModelSerializer):

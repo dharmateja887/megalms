@@ -6,8 +6,8 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
-from .models import Course, QuizAttempt
-from .serializers import CourseSerializer, QuizAttemptSerializer
+from .models import Course, LoginProfile, QuizAttempt
+from .serializers import CourseSerializer, LoginProfileSerializer, QuizAttemptSerializer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -18,6 +18,12 @@ class CourseViewSet(viewsets.ModelViewSet):
 class QuizAttemptViewSet(viewsets.ModelViewSet):
     queryset = QuizAttempt.objects.select_related("course", "chapter", "item", "user").all()
     serializer_class = QuizAttemptSerializer
+
+
+class LoginProfileViewSet(viewsets.ModelViewSet):
+    queryset = LoginProfile.objects.all()
+    serializer_class = LoginProfileSerializer
+    http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
 
 
 @api_view(["POST"])

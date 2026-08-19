@@ -136,3 +136,23 @@ class QuizAttempt(models.Model):
     def __str__(self):
         label = self.item_title or self.course_title or "Quiz attempt"
         return f"{label} - {self.mobile_number or self.user_identifier or self.id}"
+
+
+class LoginProfile(models.Model):
+    phone = models.CharField(max_length=20, unique=True)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    full_name = models.CharField(max_length=310, blank=True, default="")
+    avatar = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        self.full_name = f"{self.first_name.strip()} {self.last_name.strip()}".strip()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.full_name or self.phone

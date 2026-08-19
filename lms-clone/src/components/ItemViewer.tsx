@@ -4,6 +4,7 @@ import {
   Video,
   Music,
   File,
+  Play,
   Link as LinkIcon,
   HelpCircle,
   AlarmClock,
@@ -73,6 +74,19 @@ function buildOfficeViewerUrl(url: string): string {
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
 }
 
+function extractVideoUrlFromEmbedCode(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+
+  const iframeSrc = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i)?.[1];
+  if (iframeSrc) return iframeSrc;
+
+  const embedSrc = trimmed.match(/<embed[^>]+src=["']([^"']+)["']/i)?.[1];
+  if (embedSrc) return embedSrc;
+
+  return trimmed;
+}
+
 const QUIZ_ATTEMPTS_STORAGE_KEY = "lms_quiz_attempts";
 
 function readStoredUser(): Record<string, unknown> {
@@ -94,14 +108,78 @@ function saveQuizAttemptLocally(payload: Record<string, unknown>) {
   }
 }
 
+function useDirectVideoThumbnail(url: string | null) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!url || !isDirectVideoUrl(url)) {
+      setThumbnailUrl(null);
+      return;
+    }
+
+    let disposed = false;
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    video.src = url;
+
+    const captureFrame = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        if (!disposed) setThumbnailUrl(dataUrl);
+      } catch {
+        if (!disposed) setThumbnailUrl(null);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      try {
+        video.currentTime = Math.min(0.1, Math.max(0, (video.duration || 0) * 0.05));
+      } catch {
+        captureFrame();
+      }
+    };
+
+    const handleSeeked = () => {
+      captureFrame();
+    };
+
+    const handleError = () => {
+      if (!disposed) setThumbnailUrl(null);
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("seeked", handleSeeked);
+    video.addEventListener("error", handleError);
+
+    return () => {
+      disposed = true;
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("seeked", handleSeeked);
+      video.removeEventListener("error", handleError);
+      video.src = "";
+    };
+  }, [url]);
+
+  return thumbnailUrl;
+}
+
 type VideoSource =
-  | { kind: "youtube"; url: string; embedUrl: string; label: string }
-  | { kind: "vimeo"; url: string; embedUrl: string; label: string }
+  | { kind: "youtube"; url: string; embedUrl: string; label: string; thumbnailUrl?: string }
+  | { kind: "vimeo"; url: string; embedUrl: string; label: string; thumbnailUrl?: string }
   | { kind: "direct"; url: string; label: string }
   | { kind: "iframe"; url: string; label: string };
 
 function resolveVideoSource(url: string): VideoSource | null {
-  const trimmed = url.trim();
+  const trimmed = extractVideoUrlFromEmbedCode(url);
   if (!trimmed) return null;
 
   const ytId = getYouTubeId(trimmed);
@@ -111,6 +189,7 @@ function resolveVideoSource(url: string): VideoSource | null {
       url: trimmed,
       embedUrl: `https://www.youtube.com/embed/${ytId}?rel=0&autoplay=1&origin=${encodeURIComponent(window.location.origin)}`,
       label: "YouTube video preview",
+      thumbnailUrl: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
     };
   }
 
@@ -121,6 +200,7 @@ function resolveVideoSource(url: string): VideoSource | null {
       url: trimmed,
       embedUrl: `https://player.vimeo.com/video/${vimeoId}?autoplay=1`,
       label: "Vimeo video preview",
+      thumbnailUrl: `https://vumbnail.com/${vimeoId}.jpg`,
     };
   }
 
@@ -532,6 +612,111 @@ function VideoFrame({
   );
 }
 
+function PlayableVideo({
+  source,
+  title,
+  expanded,
+  onToggleExpanded,
+  onToggleFullscreen,
+  isFullscreen,
+}: {
+  source: VideoSource;
+  title: string;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  onToggleFullscreen: () => void;
+  isFullscreen: boolean;
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const directThumbnail = useDirectVideoThumbnail(source.kind === "direct" ? source.url : null);
+  const thumbnailUrl = source.thumbnailUrl || directThumbnail || "";
+
+  useEffect(() => {
+    setIsPlaying(false);
+  }, [source.url]);
+
+  const renderPlayer = () => {
+    if (source.kind === "youtube") {
+      return (
+        <iframe
+          className="h-full w-full border-0"
+          src={source.embedUrl}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      );
+    }
+
+    if (source.kind === "vimeo") {
+      return (
+        <iframe
+          className="h-full w-full border-0"
+          src={source.embedUrl}
+          title={title}
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+        />
+      );
+    }
+
+    if (source.kind === "direct") {
+      return <video controls autoPlay src={source.url} className="h-full w-full bg-black object-contain" />;
+    }
+
+    return (
+      <iframe
+        src={source.url}
+        title={title}
+        className="h-full w-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    );
+  };
+
+  const renderThumbnail = () => {
+    const hasThumbnail = Boolean(thumbnailUrl);
+
+    return (
+      <button
+        type="button"
+        onClick={() => setIsPlaying(true)}
+        className="relative flex h-full w-full items-center justify-center overflow-hidden bg-black text-white"
+        style={{
+          backgroundColor: "#0b0f19",
+          backgroundImage: hasThumbnail ? `url(${thumbnailUrl})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
+        <span className="relative z-10 flex flex-col items-center gap-4 px-6 text-center">
+          <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm ring-1 ring-white/25">
+            <Play size={28} className="translate-x-0.5" fill="currentColor" />
+          </span>
+          <span className="text-sm font-semibold tracking-wide uppercase">
+            {hasThumbnail ? "Play video" : "Click to play"}
+          </span>
+          <span className="max-w-md text-xs text-white/80">{title}</span>
+        </span>
+      </button>
+    );
+  };
+
+  return (
+    <VideoFrame
+      title={title}
+      expanded={expanded}
+      onToggleExpanded={onToggleExpanded}
+      onToggleFullscreen={onToggleFullscreen}
+      isFullscreen={isFullscreen}
+    >
+      {isPlaying ? renderPlayer() : renderThumbnail()}
+    </VideoFrame>
+  );
+}
+
 function LinkPreviewFrame({
   url,
   label,
@@ -687,70 +872,15 @@ export function ItemViewer({
           </div>
         )}
 
-        {item.type === "video" && videoSource && videoSource.kind === "youtube" && (
-          <VideoFrame
-            title={videoSource.label}
+        {item.type === "video" && videoSource && (
+          <PlayableVideo
+            source={videoSource}
+            title={item.title}
             expanded={videoExpanded}
             onToggleExpanded={() => setVideoExpanded((prev) => !prev)}
             onToggleFullscreen={toggleFullscreen}
             isFullscreen={isFullscreen}
-          >
-            <iframe
-              className="h-full w-full border-0"
-              src={videoSource.embedUrl}
-              title={item.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </VideoFrame>
-        )}
-
-        {item.type === "video" && videoSource && videoSource.kind === "vimeo" && (
-          <VideoFrame
-            title={videoSource.label}
-            expanded={videoExpanded}
-            onToggleExpanded={() => setVideoExpanded((prev) => !prev)}
-            onToggleFullscreen={toggleFullscreen}
-            isFullscreen={isFullscreen}
-          >
-            <iframe
-              className="h-full w-full border-0"
-              src={videoSource.embedUrl}
-              title={item.title}
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          </VideoFrame>
-        )}
-
-        {item.type === "video" && videoSource && videoSource.kind === "direct" && (
-          <VideoFrame
-            title={videoSource.label}
-            expanded={videoExpanded}
-            onToggleExpanded={() => setVideoExpanded((prev) => !prev)}
-            onToggleFullscreen={toggleFullscreen}
-            isFullscreen={isFullscreen}
-          >
-            <video controls autoPlay src={videoSource.url} className="h-full w-full bg-black object-contain" />
-          </VideoFrame>
-        )}
-
-        {item.type === "video" && videoSource && videoSource.kind === "iframe" && (
-          <VideoFrame
-            title={videoSource.label}
-            expanded={videoExpanded}
-            onToggleExpanded={() => setVideoExpanded((prev) => !prev)}
-            onToggleFullscreen={toggleFullscreen}
-            isFullscreen={isFullscreen}
-          >
-            <iframe
-              src={videoSource.url}
-              title={item.title}
-              className="h-full w-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </VideoFrame>
+          />
         )}
 
         {item.type === "video" && !videoSource && <Placeholder item={item} />}
@@ -783,56 +913,15 @@ export function ItemViewer({
 
         {item.type === "audio" && !sourceUrl && <Placeholder item={item} />}
 
-        {item.type === "link" && linkSource && linkSource.kind === "video" && linkSource.source.kind === "youtube" && (
-          <VideoFrame
-            title={linkSource.source.label}
+        {item.type === "link" && linkSource && linkSource.kind === "video" && (
+          <PlayableVideo
+            source={linkSource.source}
+            title={item.title}
             expanded={videoExpanded}
             onToggleExpanded={() => setVideoExpanded((prev) => !prev)}
             onToggleFullscreen={toggleFullscreen}
             isFullscreen={isFullscreen}
-          >
-            <iframe
-              className="h-full w-full border-0"
-              src={linkSource.source.embedUrl}
-              title={item.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </VideoFrame>
-        )}
-
-        {item.type === "link" && linkSource && linkSource.kind === "video" && linkSource.source.kind === "vimeo" && (
-          <VideoFrame
-            title={linkSource.source.label}
-            expanded={videoExpanded}
-            onToggleExpanded={() => setVideoExpanded((prev) => !prev)}
-            onToggleFullscreen={toggleFullscreen}
-            isFullscreen={isFullscreen}
-          >
-            <iframe
-              className="h-full w-full border-0"
-              src={linkSource.source.embedUrl}
-              title={item.title}
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
-          </VideoFrame>
-        )}
-
-        {item.type === "link" && linkSource && linkSource.kind === "video" && linkSource.source.kind === "direct" && (
-          <VideoFrame
-            title={linkSource.source.label}
-            expanded={videoExpanded}
-            onToggleExpanded={() => setVideoExpanded((prev) => !prev)}
-            onToggleFullscreen={toggleFullscreen}
-            isFullscreen={isFullscreen}
-          >
-            <video controls autoPlay src={linkSource.source.url} className="h-full w-full bg-black object-contain" />
-          </VideoFrame>
-        )}
-
-        {item.type === "link" && linkSource && linkSource.kind === "video" && linkSource.source.kind === "iframe" && (
-          <LinkPreviewFrame url={linkSource.source.url} label={linkSource.source.label} title={item.title} />
+          />
         )}
 
         {item.type === "link" && linkSource && linkSource.kind === "pdf" && (

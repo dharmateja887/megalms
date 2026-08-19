@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AssessmentDropdown from './AssessmentDropdown.jsx'
 import CoursesDropdown from './CoursesDropdown.jsx'
+import { getDisplayName, getUserInitials, readStoredUser } from '../utils/user.js'
 
 function Logo() {
   return (
@@ -24,9 +25,10 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem('qt_nxt_user') || '{}')
-  const phone = user.phone || ''
-  const isAuthed = Boolean(phone)
+  const user = readStoredUser()
+  const displayName = getDisplayName(user)
+  const initials = getUserInitials(user)
+  const isAuthed = Boolean(user.phone || user.firstName || user.lastName || user.name || user.email)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -133,9 +135,12 @@ function Navbar() {
           <div className="nav-actions">
             {isAuthed ? (
               <>
-                <span className="nav-user-chip" title="Logged in mobile number">
-                  {phone}
-                </span>
+                <div className="nav-user-chip" title={displayName}>
+                  <span className="nav-user-avatar" aria-hidden="true">
+                    {user.avatar ? <img src={user.avatar} alt="" /> : initials}
+                  </span>
+                  <span className="nav-user-name">{displayName}</span>
+                </div>
                 <button type="button" className="nav-logout-btn" onClick={logout}>
                   Logout
                 </button>
