@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import {
   FileText,
   Video,
@@ -12,6 +12,7 @@ import {
   ClipboardCheck,
   Maximize2,
   Minimize2,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -56,8 +57,16 @@ function isDocumentUrl(url: string): boolean {
   return /\.(docx?|pptx?|xlsx?|odt|ods|odp|rtf)(\?.*)?$/i.test(url);
 }
 
+function isAudioUrl(url: string): boolean {
+  return /^data:audio\//i.test(url) || /\.(mp3|wav|ogg|m4a|aac|flac|wma)(\?.*)?$/i.test(url);
+}
+
 function isGoogleDocsUrl(url: string): boolean {
   return /docs\.google\.com|drive\.google\.com/i.test(url);
+}
+
+function buildGoogleDocsEmbedUrl(url: string): string {
+  return url.replace(/\/edit(?:\?.*)?$/, "/preview").replace(/\/view(?:\?.*)?$/, "/preview");
 }
 
 function buildOfficeViewerUrl(url: string): string {
@@ -134,6 +143,7 @@ type LinkSource =
   | { kind: "video"; source: VideoSource }
   | { kind: "pdf"; url: string; label: string }
   | { kind: "document"; url: string; label: string }
+  | { kind: "audio"; url: string; label: string }
   | { kind: "iframe"; url: string; label: string };
 
 type QuizAttemptContext = {
@@ -144,6 +154,7 @@ type QuizAttemptContext = {
   chapterTitle?: string;
   itemTitle?: string;
   itemType?: string;
+  mobileNumber?: string;
 };
 
 function resolveLinkSource(url: string): LinkSource | null {
@@ -172,7 +183,11 @@ function resolveLinkSource(url: string): LinkSource | null {
   }
 
   if (isGoogleDocsUrl(trimmed)) {
-    return { kind: "document", url: trimmed, label: "Document preview" };
+    return { kind: "document", url: buildGoogleDocsEmbedUrl(trimmed), label: "Google Docs preview" };
+  }
+
+  if (isAudioUrl(trimmed)) {
+    return { kind: "audio", url: trimmed, label: "Audio preview" };
   }
 
   return { kind: "iframe", url: trimmed, label: "Link preview" };
@@ -351,7 +366,15 @@ function QuizViewer({
       </div>
 
       <div className="border border-[#ECEEEF] bg-white p-6 shadow-sm space-y-6">
-        <h4 className="text-base font-semibold text-[#0F1013]">{q.question}</h4>
+        <div>
+          <h4 className="text-base font-semibold text-[#0F1013]">{q.question}</h4>
+          {q.questionImage && (
+            <img src={q.questionImage} alt="Question" className="mt-3 max-h-48 border border-[#ECEEEF] rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+          )}
+          {q.questionVideo && (
+            <video src={q.questionVideo} controls className="mt-3 max-h-56 w-full border border-[#ECEEEF] rounded" />
+          )}
+        </div>
 
         <div className="space-y-3">
           {q.options.map((opt) => {
@@ -381,7 +404,15 @@ function QuizViewer({
                 >
                   {isSelected ? "✓" : ""}
                 </div>
-                <span className="text-sm">{opt.text}</span>
+                <div className="flex-grow min-w-0">
+                  <span className="text-sm">{opt.text}</span>
+                  {opt.image && (
+                    <img src={opt.image} alt="" className="mt-2 max-h-24 border border-[#ECEEEF] rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  )}
+                  {opt.video && (
+                    <video src={opt.video} controls className="mt-2 max-h-32 w-full border border-[#ECEEEF] rounded" />
+                  )}
+                </div>
               </div>
             );
           })}
@@ -497,6 +528,84 @@ function VideoFrame({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
       {frame}
+    </div>
+  );
+}
+
+function LinkPreviewFrame({
+  url,
+  label,
+  title,
+}: {
+  url: string;
+  label: string;
+  title: string;
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  const handleLoad = useCallback(() => {
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc || doc.body?.innerHTML === "") {
+        setLoadError(true);
+      }
+    } catch {
+      // Cross-origin — assume it loaded (can't inspect)
+    }
+  }, []);
+
+  const handleError = useCallback(() => {
+    setLoadError(true);
+  }, []);
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
+        <LinkIcon size={48} className="text-[#9AA1A8]" />
+        <div className="text-base font-semibold text-[#232228]">{title}</div>
+        <p className="text-sm text-[#6B7280] max-w-md">
+          This website cannot be embedded due to security restrictions. Click below to open it in a new tab.
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-[#4E5DE0] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4350C8]"
+        >
+          <ExternalLink size={16} />
+          Open in new tab
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 py-2 bg-[#F8F9FA] border border-[#ECEEEF] border-b-0">
+        <LinkIcon size={13} className="text-[#4E5DE0] shrink-0" />
+        <span className="text-xs text-[#6B7280] truncate flex-grow">{url}</span>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-[#4E5DE0] hover:underline"
+          title="Open in new tab"
+        >
+          <ExternalLink size={12} />
+        </a>
+      </div>
+      <iframe
+        ref={iframeRef}
+        src={url}
+        title={title}
+        className="flex-grow w-full border border-[#ECEEEF] border-t-0"
+        style={{ minHeight: "70vh" }}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        onLoad={handleLoad}
+        onError={handleError}
+      />
     </div>
   );
 }
@@ -722,6 +831,10 @@ export function ItemViewer({
           </VideoFrame>
         )}
 
+        {item.type === "link" && linkSource && linkSource.kind === "video" && linkSource.source.kind === "iframe" && (
+          <LinkPreviewFrame url={linkSource.source.url} label={linkSource.source.label} title={item.title} />
+        )}
+
         {item.type === "link" && linkSource && linkSource.kind === "pdf" && (
           <Suspense
             fallback={
@@ -734,14 +847,19 @@ export function ItemViewer({
           </Suspense>
         )}
 
+        {item.type === "link" && linkSource && linkSource.kind === "audio" && (
+          <div className="flex flex-col items-center justify-center gap-4 py-10">
+            <Music size={48} className="text-[#4E5DE0]" />
+            <audio controls src={linkSource.url} className="w-full max-w-lg" />
+          </div>
+        )}
+
         {item.type === "link" && linkSource && linkSource.kind === "document" && (
-          <iframe
-            src={linkSource.url}
-            title={item.title}
-            className="h-[70vh] w-full border border-[#ECEEEF]"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
+          <LinkPreviewFrame url={linkSource.url} label={linkSource.label} title={item.title} />
+        )}
+
+        {item.type === "link" && linkSource && linkSource.kind === "iframe" && (
+          <LinkPreviewFrame url={linkSource.url} label={linkSource.label} title={item.title} />
         )}
 
         {item.type === "link" && !linkSource && <Placeholder item={item} />}

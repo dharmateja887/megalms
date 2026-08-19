@@ -11,11 +11,15 @@ export type FileMeta = {
 export type QuizOption = {
   id: string;
   text: string;
+  image?: string;
+  video?: string;
 };
 
 export type QuizQuestion = {
   id: string;
   question: string;
+  questionImage?: string;
+  questionVideo?: string;
   options: QuizOption[];
   correctOptionId: string;
   explanation?: string;

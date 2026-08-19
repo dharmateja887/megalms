@@ -14,7 +14,7 @@ import { MarkdownEditor } from "./MarkdownEditor";
 import { useCourses } from "../context/CourseContext";
 
 export function CreateCourseView() {
-  const { draft, updateDraft } = useCourses();
+  const { courses, draft, editingCourseId, updateDraft } = useCourses();
   const navigate = useNavigate();
   const [title, setTitle] = useState(draft.title);
   const [description, setDescription] = useState(draft.description);
@@ -25,6 +25,7 @@ export function CreateCourseView() {
   const [isAiPreviewOpen, setIsAiPreviewOpen] = useState(false);
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [titleError, setTitleError] = useState("");
   
   const handleGenerateAI = () => {
     // Add logic for AI generation here
@@ -37,8 +38,21 @@ export function CreateCourseView() {
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = title.trim();
+    if (!trimmed) {
+      setTitleError("Course title is required.");
+      return;
+    }
+    const duplicate = courses.some(
+      (c) => c.title.toLowerCase() === trimmed.toLowerCase() && c.id !== editingCourseId
+    );
+    if (duplicate) {
+      setTitleError("A course with this title already exists. Please choose a different title.");
+      return;
+    }
+    setTitleError("");
     updateDraft({
-      title,
+      title: trimmed,
       description,
       pricing: { planType: planType as "FREE" | "ONE_TIME", mrp, price, passFees },
     });
@@ -61,14 +75,17 @@ export function CreateCourseView() {
             Title *
           </label>
           <input
-            className="border outline-none border-[#C9CED3] focus:border-[#4E5DE0] pl-4 pr-4 py-3.5 w-full text-sm bg-white transition-colors duration-200 text-[#393F41]"
+            className={`border outline-none pl-4 pr-4 py-3.5 w-full text-sm bg-white transition-colors duration-200 text-[#393F41] ${
+              titleError ? "border-red-500 focus:border-red-500" : "border-[#C9CED3] focus:border-[#4E5DE0]"
+            }`}
             name="title"
             placeholder="Enter course title"
             id="title"
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); if (titleError) setTitleError(""); }}
           />
+          {titleError && <p className="text-xs text-red-500 mt-1">{titleError}</p>}
         </div>
 
         {/* AI Banner */}

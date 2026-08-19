@@ -61,11 +61,13 @@ export function CourseBuilderView() {
   const [menuChapterId, setMenuChapterId] = useState<number | null>(null);
   const [editingChapterId, setEditingChapterId] = useState<number | null>(null);
   const [editingChapterTitle, setEditingChapterTitle] = useState("");
+  const [chapterTitleError, setChapterTitleError] = useState("");
   const [editingItem, setEditingItem] = useState<{ chapterId: number; itemId: number } | null>(null);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [activeItemType, setActiveItemType] = useState<ItemType | null>(null);
+  const [courseTitleError, setCourseTitleError] = useState("");
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const handleDeleteChapter = (chapterId: number) => {
@@ -77,6 +79,11 @@ export function CourseBuilderView() {
       setSelectedItemId(null);
     }
     setMenuChapterId(null);
+  };
+
+  const hasDuplicateChapterTitle = (title: string, excludeId?: number) => {
+    const trimmed = title.trim().toLowerCase();
+    return chapters.some((ch) => ch.id !== excludeId && ch.title.trim().toLowerCase() === trimmed);
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +134,18 @@ export function CourseBuilderView() {
   };
 
   const handleSave = async () => {
+    const trimmed = draft.title.trim();
+    if (!trimmed) {
+      setCourseTitleError("Course title cannot be empty.");
+      return;
+    }
+    const duplicate = courses.some(
+      (c) => c.title.toLowerCase() === trimmed.toLowerCase() && c.id !== editingCourseId
+    );
+    if (duplicate) {
+      setCourseTitleError("A course with this title already exists.");
+      return;
+    }
     await saveCourse();
     setShowToast(true);
   };
@@ -228,12 +247,36 @@ export function CourseBuilderView() {
           >
             <ArrowLeft size={18} />
           </button>
-          <input
-            className="text-xl font-semibold text-[#0F1013] bg-transparent outline-none focus:border-b focus:border-[#4E5DE0] max-w-[1480px]"
-            value={draft.title}
-            onChange={(e) => updateDraft({ title: e.target.value })}
-            title={draft.title}
-          />
+          <div className="flex flex-col flex-grow max-w-[1480px]">
+            <input
+              className={`text-xl font-semibold bg-transparent outline-none focus:border-b w-full ${
+                courseTitleError ? "text-red-600 focus:border-red-500" : "text-[#0F1013] focus:border-[#4E5DE0]"
+              }`}
+              value={draft.title}
+              onChange={(e) => {
+                const val = e.target.value;
+                updateDraft({ title: val });
+                if (courseTitleError) setCourseTitleError("");
+              }}
+              onBlur={() => {
+                const trimmed = draft.title.trim();
+                if (!trimmed) {
+                  setCourseTitleError("Course title cannot be empty.");
+                  return;
+                }
+                const duplicate = courses.some(
+                  (c) => c.title.toLowerCase() === trimmed.toLowerCase() && c.id !== editingCourseId
+                );
+                if (duplicate) {
+                  setCourseTitleError("A course with this title already exists.");
+                } else {
+                  setCourseTitleError("");
+                }
+              }}
+              title={draft.title}
+            />
+            {courseTitleError && <p className="text-xs text-red-500 mt-1">{courseTitleError}</p>}
+          </div>
           <div className="ml-auto flex items-center gap-3">
             <button
               onClick={handleSetUserPreview}
@@ -343,38 +386,66 @@ export function CourseBuilderView() {
                             <div className="flex items-center gap-2 min-w-0 flex-grow mr-2">
                               <ChevronDown size={14} className="text-[#9AA1A8] flex-shrink-0" />
                               {editingChapterId === chapter.id ? (
+                                <>
                                 <input
                                   type="text"
                                   autoFocus
-                                  className="text-sm font-medium text-[#393F41] bg-white border border-[#4E5DE0] px-2 py-0.5 outline-none w-full"
+                                  className={`text-sm font-medium bg-white border px-2 py-0.5 outline-none w-full ${
+                                    chapterTitleError ? "text-red-600 border-red-500" : "text-[#393F41] border-[#4E5DE0]"
+                                  }`}
                                   value={editingChapterTitle}
-                                  onChange={(e) => setEditingChapterTitle(e.target.value)}
+                                  onChange={(e) => { setEditingChapterTitle(e.target.value); if (chapterTitleError) setChapterTitleError(""); }}
                                   onBlur={() => {
-                                    if (editingChapterTitle.trim()) {
-                                      updateDraft({
-                                        chapters: chapters.map((ch) =>
-                                          ch.id === chapter.id ? { ...ch, title: editingChapterTitle.trim() } : ch
-                                        ),
-                                      });
+                                    const trimmed = editingChapterTitle.trim();
+                                    if (!trimmed) {
+                                      setChapterTitleError("");
+                                      setEditingChapterId(null);
+                                      return;
                                     }
+                                    if (hasDuplicateChapterTitle(trimmed, chapter.id)) {
+                                      setChapterTitleError("A chapter with this title already exists.");
+                                      return;
+                                    }
+                                    updateDraft({
+                                      chapters: chapters.map((ch) =>
+                                        ch.id === chapter.id ? { ...ch, title: trimmed } : ch
+                                      ),
+                                    });
+                                    setChapterTitleError("");
                                     setEditingChapterId(null);
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
-                                      if (editingChapterTitle.trim()) {
-                                        updateDraft({
-                                          chapters: chapters.map((ch) =>
-                                            ch.id === chapter.id ? { ...ch, title: editingChapterTitle.trim() } : ch
-                                          ),
-                                        });
+                                      const trimmed = editingChapterTitle.trim();
+                                      if (!trimmed) {
+                                        setChapterTitleError("");
+                                        setEditingChapterId(null);
+                                        return;
                                       }
+                                      if (hasDuplicateChapterTitle(trimmed, chapter.id)) {
+                                        setChapterTitleError("A chapter with this title already exists.");
+                                        return;
+                                      }
+                                      updateDraft({
+                                        chapters: chapters.map((ch) =>
+                                          ch.id === chapter.id ? { ...ch, title: trimmed } : ch
+                                        ),
+                                      });
+                                      setChapterTitleError("");
                                       setEditingChapterId(null);
                                     } else if (e.key === "Escape") {
+                                      setChapterTitleError("");
                                       setEditingChapterId(null);
                                     }
                                   }}
                                   onClick={(e) => e.stopPropagation()}
                                 />
+                                {chapterTitleError && (
+                                  <p className="text-xs text-red-500 mt-1 absolute left-0 top-full z-30 bg-white px-2 py-1 border border-red-200 shadow-sm whitespace-nowrap">
+                                    {chapterTitleError}
+                                  </p>
+                                )}
+                                </>
                               ) : (
                                 <span className="text-sm font-medium text-[#393F41] truncate">{chapter.title}</span>
                               )}

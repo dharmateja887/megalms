@@ -127,6 +127,16 @@ class CourseSerializer(serializers.ModelSerializer):
     createdAt = serializers.SerializerMethodField()
     updatedAt = serializers.SerializerMethodField()
 
+    def validate_title(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Course title cannot be empty.")
+        qs = Course.objects.filter(title__iexact=value.strip())
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("A course with this title already exists. Please choose a different title.")
+        return value.strip()
+
     class Meta:
         model = Course
         fields = [

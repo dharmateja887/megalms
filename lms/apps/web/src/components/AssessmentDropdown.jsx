@@ -14,12 +14,8 @@ function AssessmentDropdown({ onClose }) {
     <div className="assess-dropdown" onClick={onClose}>
       <div className="assess-dropdown-inner" onClick={(e) => e.stopPropagation()}>
         <div className="container">
-          <div className="assess-dropdown-head">
-            <div className="section-head center">
-              <span className="eyebrow">Assessments</span>
-              <h2>All Assessments</h2>
-              <p>Explore every assessment and find the right course for your goals.</p>
-            </div>
+          <div className="assess-dropdown-head" style={{ marginBottom: 32 }}>
+            <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#1a1a2e' }}>All Assessments</h2>
             <button
               type="button"
               className="assess-close"

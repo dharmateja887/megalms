@@ -23,11 +23,15 @@ export type ItemType =
 export type QuizOption = {
   id: string;
   text: string;
+  image?: string;
+  video?: string;
 };
 
 export type QuizQuestion = {
   id: string;
   question: string;
+  questionImage?: string;
+  questionVideo?: string;
   options: QuizOption[];
   correctOptionId: string;
   explanation?: string;
@@ -82,15 +86,25 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
       {
         id: "1",
         question: "",
+        questionImage: "",
+        questionVideo: "",
         options: [
-          { id: "opt_1", text: "" },
-          { id: "opt_2", text: "" },
+          { id: "opt_1", text: "", image: "", video: "" },
+          { id: "opt_2", text: "", image: "", video: "" },
         ],
         correctOptionId: "opt_1",
         explanation: "",
       },
     ]
   );
+  const [questionMediaEnabled, setQuestionMediaEnabled] = useState(() => {
+    const qs = initialData?.quizQuestions;
+    return qs ? qs.some((q) => q.questionImage || q.questionVideo) : false;
+  });
+  const [optionMediaEnabled, setOptionMediaEnabled] = useState(() => {
+    const qs = initialData?.quizQuestions;
+    return qs ? qs.some((q) => q.options.some((o) => o.image || o.video)) : false;
+  });
 
   const { title: modalTitle, needsUpload } = meta[type];
   const headerTitle = initialData ? modalTitle.replace(/^New /, "Edit ") : modalTitle;
@@ -240,9 +254,11 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                         {
                           id: newId,
                           question: "",
+                          questionImage: "",
+                          questionVideo: "",
                           options: [
-                            { id: newOptId1, text: "" },
-                            { id: newOptId2, text: "" },
+                            { id: newOptId1, text: "", image: "", video: "" },
+                            { id: newOptId2, text: "", image: "", video: "" },
                           ],
                           correctOptionId: newOptId1,
                           explanation: "",
@@ -253,6 +269,31 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                   >
                     + Add Question
                   </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-6 px-4 py-3 bg-[#F8F9FA] border border-[#ECEEEF]">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div
+                      className={`relative w-10 h-5 rounded-full transition-colors ${questionMediaEnabled ? 'bg-[#4E5DE0]' : 'bg-[#C9CED3]'}`}
+                      onClick={() => setQuestionMediaEnabled(!questionMediaEnabled)}
+                    >
+                      <div
+                        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${questionMediaEnabled ? 'translate-x-5' : ''}`}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-[#393F41]">Question Images/Videos</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div
+                      className={`relative w-10 h-5 rounded-full transition-colors ${optionMediaEnabled ? 'bg-[#4E5DE0]' : 'bg-[#C9CED3]'}`}
+                      onClick={() => setOptionMediaEnabled(!optionMediaEnabled)}
+                    >
+                      <div
+                        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${optionMediaEnabled ? 'translate-x-5' : ''}`}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-[#393F41]">Option Images/Videos</span>
+                  </label>
                 </div>
 
                 {quizQuestions.map((q, qIndex) => (
@@ -286,63 +327,146 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                       />
                     </div>
 
+                    {questionMediaEnabled && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <input
+                            type="url"
+                            className="w-full border border-[#C9CED3] bg-white px-3 py-1.5 text-xs text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                            placeholder="Question image URL (optional)"
+                            value={q.questionImage ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setQuizQuestions(
+                                quizQuestions.map((item) => (item.id === q.id ? { ...item, questionImage: val } : item))
+                              );
+                            }}
+                          />
+                          {(q.questionImage ?? "") && (
+                            <img src={q.questionImage} alt="" className="mt-1.5 max-h-24 border border-[#ECEEEF]" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            type="url"
+                            className="w-full border border-[#C9CED3] bg-white px-3 py-1.5 text-xs text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                            placeholder="Question video URL (optional)"
+                            value={q.questionVideo ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setQuizQuestions(
+                                quizQuestions.map((item) => (item.id === q.id ? { ...item, questionVideo: val } : item))
+                              );
+                            }}
+                          />
+                          {(q.questionVideo ?? "") && (
+                            <video src={q.questionVideo} controls className="mt-1.5 max-h-28 w-full border border-[#ECEEEF]" />
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <label className="block text-xs font-medium text-[#6B7280]">Options (Select the correct answer)</label>
                       {q.options.map((opt, optIndex) => (
-                        <div key={opt.id} className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name={`correct_${q.id}`}
-                            checked={q.correctOptionId === opt.id}
-                            onChange={() => {
-                              setQuizQuestions(
-                                quizQuestions.map((item) =>
-                                  item.id === q.id ? { ...item, correctOptionId: opt.id } : item
-                                )
-                              );
-                            }}
-                            className="accent-[#4E5DE0]"
-                            title="Mark as correct answer"
-                          />
-                          <input
-                            type="text"
-                            required
-                            className="flex-grow border border-[#C9CED3] bg-white px-3 py-1.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
-                            placeholder={`Option ${optIndex + 1}`}
-                            value={opt.text}
-                            onChange={(e) => {
-                              const text = e.target.value;
-                              setQuizQuestions(
-                                quizQuestions.map((item) =>
-                                  item.id === q.id
-                                    ? {
-                                        ...item,
-                                        options: item.options.map((o) => (o.id === opt.id ? { ...o, text } : o)),
-                                      }
-                                    : item
-                                )
-                              );
-                            }}
-                          />
-                          {q.options.length > 2 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newOpts = q.options.filter((o) => o.id !== opt.id);
-                                let newCorrect = q.correctOptionId;
-                                if (q.correctOptionId === opt.id) {
-                                  newCorrect = newOpts[0]?.id ?? "";
-                                }
+                        <div key={opt.id} className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name={`correct_${q.id}`}
+                              checked={q.correctOptionId === opt.id}
+                              onChange={() => {
                                 setQuizQuestions(
                                   quizQuestions.map((item) =>
-                                    item.id === q.id ? { ...item, options: newOpts, correctOptionId: newCorrect } : item
+                                    item.id === q.id ? { ...item, correctOptionId: opt.id } : item
                                   )
                                 );
                               }}
-                              className="text-xs text-[#9AA1A8] hover:text-red-600 px-1"
-                            >
-                              ✕
-                            </button>
+                              className="accent-[#4E5DE0]"
+                              title="Mark as correct answer"
+                            />
+                            <input
+                              type="text"
+                              required
+                              className="flex-grow border border-[#C9CED3] bg-white px-3 py-1.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                              placeholder={`Option ${optIndex + 1}`}
+                              value={opt.text}
+                              onChange={(e) => {
+                                const text = e.target.value;
+                                setQuizQuestions(
+                                  quizQuestions.map((item) =>
+                                    item.id === q.id
+                                      ? {
+                                          ...item,
+                                          options: item.options.map((o) => (o.id === opt.id ? { ...o, text } : o)),
+                                        }
+                                      : item
+                                  )
+                                );
+                              }}
+                            />
+                            {q.options.length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newOpts = q.options.filter((o) => o.id !== opt.id);
+                                  let newCorrect = q.correctOptionId;
+                                  if (q.correctOptionId === opt.id) {
+                                    newCorrect = newOpts[0]?.id ?? "";
+                                  }
+                                  setQuizQuestions(
+                                    quizQuestions.map((item) =>
+                                      item.id === q.id ? { ...item, options: newOpts, correctOptionId: newCorrect } : item
+                                    )
+                                  );
+                                }}
+                                className="text-xs text-[#9AA1A8] hover:text-red-600 px-1"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                          {optionMediaEnabled && (
+                            <div className="grid grid-cols-2 gap-2 pl-7">
+                              <input
+                                type="url"
+                                className="w-full border border-[#C9CED3] bg-white px-2 py-1 text-[11px] text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                                placeholder="Image URL"
+                                value={opt.image ?? ""}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setQuizQuestions(
+                                    quizQuestions.map((item) =>
+                                      item.id === q.id
+                                        ? { ...item, options: item.options.map((o) => (o.id === opt.id ? { ...o, image: val } : o)) }
+                                        : item
+                                    )
+                                  );
+                                }}
+                              />
+                              <input
+                                type="url"
+                                className="w-full border border-[#C9CED3] bg-white px-2 py-1 text-[11px] text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                                placeholder="Video URL"
+                                value={opt.video ?? ""}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setQuizQuestions(
+                                    quizQuestions.map((item) =>
+                                      item.id === q.id
+                                        ? { ...item, options: item.options.map((o) => (o.id === opt.id ? { ...o, video: val } : o)) }
+                                        : item
+                                    )
+                                  );
+                                }}
+                              />
+                              {(opt.image ?? "") && (
+                                <img src={opt.image} alt="" className="col-span-2 max-h-16 border border-[#ECEEEF]" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                              )}
+                              {(opt.video ?? "") && (
+                                <video src={opt.video} controls className="col-span-2 max-h-20 w-full border border-[#ECEEEF]" />
+                              )}
+                            </div>
                           )}
                         </div>
                       ))}
@@ -354,7 +478,7 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                             setQuizQuestions(
                               quizQuestions.map((item) =>
                                 item.id === q.id
-                                  ? { ...item, options: [...item.options, { id: newOptId, text: "" }] }
+                                  ? { ...item, options: [...item.options, { id: newOptId, text: "", image: "", video: "" }] }
                                   : item
                               )
                             );
