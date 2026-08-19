@@ -1,0 +1,9 @@
+{
+  "name": "megalms-root",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api": "python lms-clone/backend/manage.py runserver 127.0.0.1:8000",
+    "dev": "node dev-all.mjs"
+  }
+}

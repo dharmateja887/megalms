@@ -1,0 +1,48 @@
+import {
+  FaCalculator,
+  FaAtom,
+  FaFlask,
+  FaDna,
+  FaBookOpen,
+  FaCode,
+  FaLandmark,
+  FaGlobe,
+  FaChartLine,
+  FaPalette,
+} from 'react-icons/fa'
+
+export const courseCategories = [
+  { id: 'mathematics', name: 'Mathematics', icon: FaCalculator, color: '#2f8bf0' },
+  { id: 'physics', name: 'Physics', icon: FaAtom, color: '#7c5cfc' },
+  { id: 'chemistry', name: 'Chemistry', icon: FaFlask, color: '#0ea5e9' },
+  { id: 'biology', name: 'Biology', icon: FaDna, color: '#10b981' },
+  { id: 'english', name: 'English', icon: FaBookOpen, color: '#f59e0b' },
+  { id: 'cs', name: 'Computer Science', icon: FaCode, color: '#ef4444' },
+  { id: 'history', name: 'History', icon: FaLandmark, color: '#8b5cf6' },
+  { id: 'geography', name: 'Geography', icon: FaGlobe, color: '#14b8a6' },
+  { id: 'economics', name: 'Economics', icon: FaChartLine, color: '#d946ef' },
+  { id: 'design', name: 'Design', icon: FaPalette, color: '#64748b' },
+]
+
+export const courses = [
+  { id: 1, name: 'Algebra I', category: 'mathematics', modules: 12, duration: '8 weeks' },
+  { id: 2, name: 'Geometry', category: 'mathematics', modules: 14, duration: '10 weeks' },
+  { id: 3, name: 'Physics Fundamentals', category: 'physics', modules: 16, duration: '12 weeks' },
+  { id: 4, name: 'Advanced Mechanics', category: 'physics', modules: 12, duration: '8 weeks' },
+  { id: 5, name: 'Chemistry Essentials', category: 'chemistry', modules: 15, duration: '10 weeks' },
+  { id: 6, name: 'Organic Chemistry', category: 'chemistry', modules: 12, duration: '8 weeks' },
+  { id: 7, name: 'Biology Basics', category: 'biology', modules: 13, duration: '8 weeks' },
+  { id: 8, name: 'Genetics & Evolution', category: 'biology', modules: 11, duration: '6 weeks' },
+  { id: 9, name: 'English Communication', category: 'english', modules: 11, duration: '6 weeks' },
+  { id: 10, name: 'Business English', category: 'english', modules: 9, duration: '5 weeks' },
+  { id: 11, name: 'Python Programming', category: 'cs', modules: 18, duration: '12 weeks' },
+  { id: 12, name: 'Web Development', category: 'cs', modules: 16, duration: '10 weeks' },
+  { id: 13, name: 'Modern World History', category: 'history', modules: 14, duration: '10 weeks' },
+  { id: 14, name: 'Indian History', category: 'history', modules: 12, duration: '8 weeks' },
+  { id: 15, name: 'Earth & Environment', category: 'geography', modules: 12, duration: '8 weeks' },
+  { id: 16, name: 'Map Skills', category: 'geography', modules: 8, duration: '4 weeks' },
+  { id: 17, name: 'Economics 101', category: 'economics', modules: 15, duration: '10 weeks' },
+  { id: 18, name: 'Microeconomics Basics', category: 'economics', modules: 12, duration: '8 weeks' },
+  { id: 19, name: 'UI/UX Design Basics', category: 'design', modules: 10, duration: '6 weeks' },
+  { id: 20, name: 'Graphic Design', category: 'design', modules: 12, duration: '8 weeks' },
+]

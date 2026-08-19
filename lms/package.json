@@ -1,0 +1,19 @@
+{
+  "name": "qt-nxt-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:lms\"",
+    "dev:web": "npm --workspace web run dev",
+    "dev:lms": "npm --workspace lms run dev",
+    "build:web": "npm --workspace web run build",
+    "build:lms": "npm --workspace lms run build",
+    "lint": "npm --workspace web run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

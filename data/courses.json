@@ -1,0 +1,77 @@
+{
+  "courses": [
+    {
+      "title": "Django",
+      "description": "Django is a high-level, open-source Python web framework designed to help developers build secure, scalable, and maintainable web applications quickly.Its core philosophy is \"batteries-included,\" meaning it comes with almost everything you need out of the box rather than forcing you to integrate third-party libraries for basic features.Key FeaturesBuilt-in Admin Interface: Automatically generates a production-ready administration panel based on your data models.Object-Relational Mapper (ORM): Interact with your database (PostgreSQL, SQLite, MySQL) using Python code instead of writing raw SQL queries.Security Defaults: Provides built-in protection against common web vulnerabilities, including Cross-Site Scripting (XSS), Cross-Site Request Forgery (CSRF), and SQL Injection.Authentication System: Includes a pre-built user management system handling sign-ups, logins, password resets, and permissions.Scalability: Handles high-traffic applications seamlessly (used by companies like Instagram, Spotify, and Pinterest).Django Architecture (MVT Pattern)Django follows the Model-View-Template (MVT) architectural pattern:ComponentRoleAnalogous ConceptModelDefines data structures and database relationships.Database LayerViewProcesses user requests, executes business logic, and returns data.Controller LayerTemplateHandles how data is presented to the user (HTML + Django Template Language).Presentation LayerWhen Should You Use Django?Great for: Content-heavy sites, complex web applications, REST APIs (via Django REST Framework), and projects with tight deadlines.Overkill for: Microservices with minimal logic, simple single-page static sites, or lightweight micro-APIs (where Flask or FastAPI might be preferred).",
+      "pricing": {
+        "planType": "ONE_TIME",
+        "mrp": "4500",
+        "price": "5",
+        "passFees": true
+      },
+      "chapters": [
+        {
+          "id": 1786624404077,
+          "title": "Django",
+          "items": [
+            {
+              "id": 1786624414227,
+              "title": "django",
+              "type": "text",
+              "description": "Django is a high-level, open-source Python web framework designed to help developers build secure, scalable, and maintainable web applications quickly.Its core philosophy is \"batteries-included,\" meaning it comes with almost everything you need out of the box rather than forcing you to integrate third-party libraries for basic features.Key FeaturesBuilt-in Admin Interface: Automatically generates a production-ready administration panel based on your data models.Object-Relational Mapper (ORM): Interact with your database (PostgreSQL, SQLite, MySQL) using Python code instead of writing raw SQL queries.Security Defaults: Provides built-in protection against common web vulnerabilities, including Cross-Site Scripting (XSS), Cross-Site Request Forgery (CSRF), and SQL Injection.Authentication System: Includes a pre-built user management system handling sign-ups, logins, password resets, and permissions.Scalability: Handles high-traffic applications seamlessly (used by companies like Instagram, Spotify, and Pinterest).Django Architecture (MVT Pattern)Django follows the Model-View-Template (MVT) architectural pattern:ComponentRoleAnalogous ConceptModelDefines data structures and database relationships.Database LayerViewProcesses user requests, executes business logic, and returns data.Controller LayerTemplateHandles how data is presented to the user (HTML + Django Template Language).Presentation LayerWhen Should You Use Django?Great for: Content-heavy sites, complex web applications, REST APIs (via Django REST Framework), and projects with tight deadlines.Overkill for: Microservices with minimal logic, simple single-page static sites, or lightweight micro-APIs (where Flask or FastAPI might be preferred)."
+            },
+            {
+              "id": 1786624464056,
+              "title": "django introduction",
+              "type": "link",
+              "url": "https://www.youtube.com/watch?v=SIyxjRJ8VNY"
+            },
+            {
+              "id": 1786624485495,
+              "title": "Django pdf",
+              "type": "pdf"
+            }
+          ]
+        }
+      ],
+      "id": 2,
+      "createdAt": 1786624488724,
+      "updatedAt": 1786624488724,
+      "accessChannels": []
+    },
+    {
+      "title": "pythonTMS",
+      "description": "python to learn be easy",
+      "pricing": {
+        "planType": "ONE_TIME",
+        "mrp": "25000",
+        "price": "15",
+        "passFees": true
+      },
+      "chapters": [
+        {
+          "id": 1786621523203,
+          "title": "python",
+          "items": [
+            {
+              "id": 1786621546733,
+              "title": "python to learn",
+              "type": "text",
+              "description": "basics"
+            },
+            {
+              "id": 1786621600338,
+              "title": "python introduction",
+              "type": "link",
+              "url": "https://www.youtube.com/watch?v=I3JfCYSKbF0"
+            }
+          ]
+        }
+      ],
+      "id": 1,
+      "createdAt": 1786621610962,
+      "updatedAt": 1786622611052,
+      "accessChannels": []
+    }
+  ]
+}

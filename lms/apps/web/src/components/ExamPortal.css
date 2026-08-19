@@ -1,0 +1,343 @@
+.portal {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.sidebar {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  align-self: start;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.menu-item:last-child {
+  border-bottom: 0;
+}
+
+.menu-item:hover {
+  background: var(--bg-soft);
+  color: var(--brand);
+}
+
+.menu-item.active {
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff;
+}
+
+.menu-item .left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.menu-item .left span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-item .icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--brand-light);
+  color: var(--brand);
+  font-size: 15px;
+}
+
+.menu-item.active .icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.menu-item .arrow {
+  flex: 0 0 auto;
+  font-size: 13px;
+  opacity: 0.5;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.menu-item.active .arrow {
+  transform: translateX(3px);
+  opacity: 1;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.exam-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+}
+
+.exam-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(23, 15, 61, 0.1);
+  border-color: var(--brand);
+}
+
+.card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.exam-thumb {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 12px;
+  box-shadow: 0 6px 14px rgba(23, 15, 61, 0.12);
+}
+
+.card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.card-text strong {
+  font-size: 14.5px;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-text small {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.exam-card .arrow {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: var(--brand);
+}
+
+.portal-empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.portal-empty strong {
+  font-size: 18px;
+  color: var(--text-h);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.portal-empty p {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.course-catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.course-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+}
+
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 34px rgba(23, 15, 61, 0.12);
+  border-color: var(--brand);
+}
+
+.course-card-cover {
+  height: 150px;
+  background: var(--bg-soft);
+}
+
+.course-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.course-card-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 26px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+}
+
+.course-card-body {
+  flex: 1;
+  padding: 14px 16px 10px;
+}
+
+.course-card-body h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: var(--text-h);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.course-tagline {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.course-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.course-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.course-price {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+  background: var(--brand-light);
+}
+
+.course-price.free {
+  color: #1e8449;
+  background: #e8faf0;
+}
+
+.course-view {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--brand);
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .portal {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    padding-bottom: 4px;
+  }
+
+  .menu-item {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .menu-item:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .menu-item .arrow {
+    display: none;
+  }
+
+  .menu-item .icon {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
+}
