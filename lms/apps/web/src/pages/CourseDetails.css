@@ -308,6 +308,31 @@
 .cd-sidebar-current { font-size: 32px; font-weight: 800; color: #1a1a2e; }
 .cd-sidebar-mrp { font-size: 16px; color: #6a6f73; text-decoration: line-through; }
 .cd-sidebar-discount { font-size: 15px; color: #c1440e; font-weight: 700; }
+.cd-pg-fees {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0 6px;
+  font-size: 13px;
+  color: #166534;
+}
+.cd-pg-fees strong {
+  font-weight: 700;
+  color: #15803d;
+}
+.cd-pg-fees-modal {
+  background: #f8f9fa;
+  border-color: var(--border);
+  color: var(--text);
+  margin: 8px 0 0;
+}
+.cd-pg-fees-modal strong {
+  color: var(--text-h);
+}
 .cd-free-badge { font-size: 28px; font-weight: 800; color: #1e8449; }
 .cd-sidebar-urgency {
   font-size: 13px;

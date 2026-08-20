@@ -95,6 +95,11 @@ const videoSourceOptions: Array<{ value: VideoSourceType; label: string }> = [
   { value: "embed", label: "Embed code" },
 ];
 
+const importSources = [
+  { label: "Google Drive", url: "https://drive.google.com" },
+  { label: "Dropbox", url: "https://www.dropbox.com" },
+];
+
 export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalProps) {
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [description, setDescription] = useState(initialData?.description ?? "");
@@ -134,6 +139,8 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
   const { title: modalTitle, needsUpload } = meta[type];
   const headerTitle = initialData ? modalTitle.replace(/^New /, "Edit ") : modalTitle;
   const existingFile = initialData?.fileMeta;
+
+  const isVideoModal = type === "video";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,18 +191,24 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg bg-white shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div
+        className={`w-full bg-white shadow-xl overflow-hidden flex flex-col ${
+          isVideoModal
+            ? "max-w-[min(94vw,1280px)] min-h-[480px] max-h-[90vh]"
+            : "max-w-lg max-h-[90vh]"
+        }`}
+      >
         <div className="flex items-center justify-between border-b border-[#ECEEEF] px-6 py-4">
-          <div className="text-base font-semibold text-[#0F1013]">{headerTitle}</div>
+          <div className="text-[30px] font-medium tracking-[-0.02em] text-[#5B6474]">{headerTitle}</div>
           <button onClick={onClose} className="text-[#9AA1A8] hover:text-[#393F41]" aria-label="Close">
-            <X size={18} />
+            <X size={30} strokeWidth={1.5} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-grow overflow-y-auto">
-          <div className="p-6 space-y-4 flex-grow">
+          <div className={`p-6 flex-grow ${isVideoModal ? "space-y-8" : "space-y-4"}`}>
             {/* Title */}
-            <div>
+            <div className={isVideoModal ? "hidden" : ""}>
               <label className="block text-sm font-medium text-[#0F1013] mb-1.5">Title *</label>
               <input
                 type="text"
@@ -207,42 +220,38 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
               />
             </div>
 
-            {needsUpload && (
-              <div>
-                <label className="block text-sm font-medium text-[#0F1013] mb-1.5">
-                  {type === "video" ? "Video source" : `Upload ${type.toUpperCase()} file`} *
-                </label>
-                {type === "video" ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {videoSourceOptions.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
-                            videoSourceType === option.value
-                              ? "border-[#4E5DE0] bg-[#F2F4FF] text-[#4E5DE0]"
-                              : "border-[#C9CED3] bg-white text-[#393F41] hover:border-[#4E5DE0]"
-                          }`}
-                          onClick={() => setVideoSourceType(option.value)}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+            {isVideoModal ? (
+              <div className="space-y-7">
+                <div>
+                  <div className="flex flex-wrap items-center gap-6 border-b border-[#ECEEEF] pb-4">
+                    {videoSourceOptions.map((option) => (
+                      <label key={option.value} className="flex items-center gap-2 cursor-pointer text-[#5B6474]">
+                        <input
+                          type="radio"
+                          name="video-source"
+                          className="h-5 w-5 accent-[#1F2E75]"
+                          checked={videoSourceType === option.value}
+                          onChange={() => setVideoSourceType(option.value)}
+                        />
+                        <span className="text-[15px]">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_230px] xl:items-start">
+                  <div className="space-y-6">
                     {videoSourceType === "upload" ? (
-                      <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#C9CED3] bg-[#F8F9FA] px-4 py-8 cursor-pointer hover:border-[#4E5DE0]">
-                        <Upload size={24} className="text-[#9AA1A8]" />
-                        <span className="text-sm text-[#393F41] font-medium">
+                      <label className="flex h-[58px] items-center border border-[#D7D9E1] bg-white px-3 cursor-pointer">
+                        <span className="inline-flex h-full items-center rounded-[2px] border border-[#888] bg-[#F3F3F3] px-3 text-[18px] text-[#222]">
+                          Choose File
+                        </span>
+                        <span className="ml-3 text-[16px] text-[#5B6474]">
                           {file
                             ? file.name
                             : existingFile
                               ? `Already uploaded: ${existingFile.name}`
-                              : "Click to browse or drag & drop"}
-                        </span>
-                        <span className="text-xs text-[#6B7280]">
-                          Uploaded videos are stored securely and previewed with a thumbnail first.
+                              : "No file chosen"}
                         </span>
                         <input
                           type="file"
@@ -252,128 +261,140 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                         />
                       </label>
                     ) : videoSourceType === "embed" ? (
-                      <div>
-                        <label className="block text-sm font-medium text-[#0F1013] mb-1.5">Embed code</label>
-                        <textarea
-                          rows={5}
-                          className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0] resize-none"
-                          placeholder='<iframe src="https://..."></iframe>'
-                          value={url}
-                          onChange={(e) => setUrl(e.target.value)}
-                        />
-                      </div>
+                      <textarea
+                        rows={5}
+                        className="w-full border border-[#D7D9E1] px-4 py-3 text-base text-[#393F41] outline-none focus:border-[#4E5DE0] resize-none"
+                        placeholder='<iframe src="https://..."></iframe>'
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                      />
                     ) : (
-                      <div>
-                        <label className="block text-sm font-medium text-[#0F1013] mb-1.5">
-                          {videoSourceType === "youtube"
-                            ? "YouTube URL"
+                      <input
+                        type="url"
+                        className="w-full border border-[#D7D9E1] px-4 py-3 text-base text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                        placeholder={
+                          videoSourceType === "youtube"
+                            ? "Paste a YouTube link"
                             : videoSourceType === "vimeo"
-                              ? "Vimeo URL"
+                              ? "Paste a Vimeo link"
                               : videoSourceType === "sprout"
-                                ? "Sprout Video URL"
-                                : "Video URL"}
-                        </label>
-                        <input
-                          type="url"
-                          className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
-                          placeholder={
-                            videoSourceType === "youtube"
-                              ? "Paste a YouTube link"
-                              : videoSourceType === "vimeo"
-                                ? "Paste a Vimeo link"
-                                : videoSourceType === "sprout"
-                                  ? "Paste a SproutVideo link"
-                                  : "Paste a video link"
-                          }
-                          value={url}
-                          onChange={(e) => setUrl(e.target.value)}
-                        />
-                        <p className="mt-1.5 text-xs text-[#6B7280]">
-                          {videoSourceType === "youtube"
-                            ? "Paste a YouTube watch or short link."
-                            : videoSourceType === "vimeo"
-                              ? "Paste a Vimeo video link."
-                              : videoSourceType === "sprout"
-                                ? "Paste a Sprout Video link."
-                                : "Paste a direct video link or page URL."}
-                        </p>
-                      </div>
+                                ? "Paste a Sprout Video link"
+                                : "Paste a video link"
+                        }
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                      />
                     )}
+
+                    <div className="flex items-center gap-2 text-[#5B62D0]">
+                      <span className="inline-flex items-center rounded-full bg-[#6267DF] px-2 py-0.5 text-[12px] font-bold text-white">
+                        NEW
+                      </span>
+                      <button type="button" className="text-[20px] leading-none font-normal hover:underline">
+                        Try New Video Uploader (Beta)
+                      </button>
+                    </div>
                   </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#C9CED3] bg-[#F8F9FA] px-4 py-8 cursor-pointer hover:border-[#4E5DE0]">
-                    <Upload size={24} className="text-[#9AA1A8]" />
-                    <span className="text-sm text-[#393F41] font-medium">
-                      {file
-                        ? file.name
-                        : existingFile
-                          ? `Already uploaded: ${existingFile.name}`
-                          : "Click to browse or drag & drop"}
-                    </span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    />
-                  </label>
-                )}
-              </div>
-            )}
 
-            {type === "video" && videoSourceType === "upload" && (
-              <div className="flex items-center justify-between gap-3 rounded border border-[#ECEEEF] bg-[#F8F9FA] px-4 py-3">
-                <div className="text-xs text-[#6B7280]">
-                  Want to replace the selected file? Choose a new one above, then upload.
+                  <div className="flex items-start justify-end gap-2 xl:pt-9">
+                    <button
+                      type="button"
+                      className="border border-[#D7D9E1] bg-white px-4 py-3 text-[18px] text-[#393F41] hover:bg-[#F7F9FA] whitespace-nowrap"
+                      onClick={() => {
+                        setFile(null);
+                        setUrl("");
+                      }}
+                    >
+                      Clear
+                    </button>
+                    <button type="submit" className="bg-[#1D2C77] px-5 py-3 text-[18px] font-semibold text-white hover:bg-[#152360] whitespace-nowrap">
+                      Upload
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  className="border border-[#C9CED3] bg-white px-3 py-2 text-sm font-medium text-[#393F41] hover:bg-[#F7F9FA]"
-                  onClick={() => {
-                    setFile(null);
-                    setUrl("");
-                  }}
-                >
-                  Clear
-                </button>
-              </div>
-            )}
 
-            {type === "pdf" && (
-              <div>
-                <label className="block text-sm font-medium text-[#0F1013] mb-1.5">
-                  PDF URL
-                </label>
-                <input
-                  type="url"
-                  className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
-                  placeholder="https://example.com/file.pdf"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                />
-                <p className="mt-1.5 text-xs text-[#6B7280]">
-                  Optional. You can upload a PDF file or paste a direct PDF URL.
-                </p>
-              </div>
-            )}
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-[#E5E7EB]" />
+                  <div className="text-[16px] uppercase tracking-[0.12em] text-[#B6B8C2]">
+                    OR IMPORT FROM
+                  </div>
+                  <div className="h-px flex-1 bg-[#E5E7EB]" />
+                </div>
 
-            {type === "link" && (
-              <div>
-                <label className="block text-sm font-medium text-[#0F1013] mb-1.5">URL *</label>
-                <input
-                  type="url"
-                  required
-                  className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
-                  placeholder="https://example.com"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                />
-                <p className="mt-1.5 text-xs text-[#6B7280]">
-                  Links to videos, PDFs, and common document files will open in the right-side preview when possible.
-                </p>
+                <div className="flex items-center justify-center gap-3">
+                  {importSources.map((source) => (
+                    <button
+                      key={source.label}
+                      type="button"
+                      onClick={() => window.open(source.url, "_blank")}
+                      className="inline-flex items-center gap-2 border border-[#D7D9E1] bg-white px-4 py-3 text-[18px] text-[#5B6474] hover:bg-[#F7F9FA] whitespace-nowrap"
+                    >
+                      {source.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+            ) : (
+              <>
+                {needsUpload && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#0F1013] mb-1.5">
+                      Upload {type.toUpperCase()} file *
+                    </label>
+                    <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#C9CED3] bg-[#F8F9FA] px-4 py-8 cursor-pointer hover:border-[#4E5DE0]">
+                      <Upload size={24} className="text-[#9AA1A8]" />
+                      <span className="text-sm text-[#393F41] font-medium">
+                        {file
+                          ? file.name
+                          : existingFile
+                            ? `Already uploaded: ${existingFile.name}`
+                            : "Click to browse or drag & drop"}
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                      />
+                    </label>
+                  </div>
+                )}
 
-            {type === "quiz" && (
+                {type === "pdf" && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#0F1013] mb-1.5">
+                      PDF URL
+                    </label>
+                    <input
+                      type="url"
+                      className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                      placeholder="https://example.com/file.pdf"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                    />
+                    <p className="mt-1.5 text-xs text-[#6B7280]">
+                      Optional. You can upload a PDF file or paste a direct PDF URL.
+                    </p>
+                  </div>
+                )}
+
+                {type === "link" && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#0F1013] mb-1.5">URL *</label>
+                    <input
+                      type="url"
+                      required
+                      className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0]"
+                      placeholder="https://example.com"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                    />
+                    <p className="mt-1.5 text-xs text-[#6B7280]">
+                      Links to videos, PDFs, and common document files will open in the right-side preview when possible.
+                    </p>
+                  </div>
+                )}
+
+                {type === "quiz" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <label className="block text-sm font-semibold text-[#0F1013]">Quiz Questions</label>
@@ -641,39 +662,39 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                   </div>
                 ))}
               </div>
-            )}
-
-            {(type === "text" || type === "assignment" || type === "coding" || type === "form") && (
-              <div>
-                <label className="block text-sm font-medium text-[#0F1013] mb-1.5">Description *</label>
-                {type === "text" ? (
-                  <MarkdownEditor
-                    value={description}
-                    onChange={setDescription}
-                    required
-                    minHeight={120}
-                    placeholder="Write your notes/content in Markdown..."
-                  />
-                ) : (
-                  <textarea
-                    required
-                    rows={4}
-                    className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0] resize-none"
-                    placeholder={
-                      type === "assignment"
-                        ? "Write assignment instructions for learners..."
-                        : type === "coding"
-                          ? "Describe the coding problem learners will solve..."
-                          : "Describe the form / what information you want to collect..."
-                    }
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
                 )}
-              </div>
-            )}
 
-            {type === "livetest" && (
+                {(type === "text" || type === "assignment" || type === "coding" || type === "form") && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#0F1013] mb-1.5">Description *</label>
+                    {type === "text" ? (
+                      <MarkdownEditor
+                        value={description}
+                        onChange={setDescription}
+                        required
+                        minHeight={120}
+                        placeholder="Write your notes/content in Markdown..."
+                      />
+                    ) : (
+                      <textarea
+                        required
+                        rows={4}
+                        className="w-full border border-[#C9CED3] px-3 py-2.5 text-sm text-[#393F41] outline-none focus:border-[#4E5DE0] resize-none"
+                        placeholder={
+                          type === "assignment"
+                            ? "Write assignment instructions for learners..."
+                            : type === "coding"
+                              ? "Describe the coding problem learners will solve..."
+                              : "Describe the form / what information you want to collect..."
+                        }
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {type === "livetest" && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -701,9 +722,9 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                   Learners can attempt it during the specified time window. Results visible post declaration.
                 </p>
               </>
-            )}
+                )}
 
-            {type === "liveclass" && (
+                {type === "liveclass" && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -729,6 +750,8 @@ export function ItemModal({ type, onClose, onSubmit, initialData }: ItemModalPro
                   </div>
                 </div>
                 <p className="text-xs text-[#6B7280]">Conduct live classes and webinars with your learners.</p>
+              </>
+                )}
               </>
             )}
           </div>

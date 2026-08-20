@@ -1,0 +1,349 @@
+.lb-page {
+  padding-top: 56px;
+  padding-bottom: 40px;
+}
+
+/* ── Card ── */
+
+.lb-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 28px;
+}
+
+.lb-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.lb-card-head h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.lb-badge {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-dark);
+  background: var(--brand-light);
+  border: 1px solid #cfe6ff;
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+
+/* ── Overall Table ── */
+
+.lb-ranks-table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lb-ranks-header {
+  display: grid;
+  grid-template-columns: 56px 100px 80px 1fr 70px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 16px;
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+}
+
+.lb-rank-row {
+  display: grid;
+  grid-template-columns: 56px 100px 80px 1fr 70px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.lb-rank-row:nth-child(even) {
+  background: #f9fbfe;
+}
+
+.lb-rank-row:hover {
+  background: var(--bg-soft);
+}
+
+.lb-rank-col {
+  display: flex;
+  align-items: center;
+}
+
+.lb-rank-num {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.lb-medal {
+  font-size: 22px;
+}
+
+.lb-profile-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lb-avatar-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.lb-avatar-wrap:hover {
+  border-color: var(--brand);
+  transform: scale(1.1);
+}
+
+.lb-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lb-avatar-md {
+  width: 42px;
+  height: 42px;
+}
+
+.lb-avatar-sm {
+  width: 36px;
+  height: 36px;
+}
+
+.lb-fb {
+  background: var(--brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--brand-dark);
+}
+
+.lb-fb.lb-avatar-sm {
+  font-size: 14px;
+}
+
+.lb-name-tag {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
+.lb-metric-col {
+  text-align: right;
+}
+
+.lb-metric-val {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+/* ── Horizontal Bars ── */
+
+.lb-h-bar {
+  height: 10px;
+  background: #eef2f7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.lb-h-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand-dark), var(--brand));
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lb-h-bar-fill.gold {
+  background: linear-gradient(90deg, #e6a800, #FFD700);
+}
+
+.lb-h-bar-fill.silver {
+  background: linear-gradient(90deg, #8a8a8a, #C0C0C0);
+}
+
+.lb-h-bar-fill.bronze {
+  background: linear-gradient(90deg, #8b5e34, #CD7F32);
+}
+
+/* ── Per-Course Vertical Charts ── */
+
+.lb-vert-section {
+  margin-top: 24px;
+}
+
+.lb-vert-section + .lb-vert-section {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.lb-vert-label {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.lb-vert-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 32px;
+  height: 200px;
+  padding: 0 16px;
+}
+
+.lb-vert-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 90px;
+}
+
+.lb-vert-val {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.lb-vert-bar {
+  width: 52px;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 8px;
+}
+
+.lb-vert-bar.g1 { background: linear-gradient(180deg, #FFD700, #FFA500); }
+.lb-vert-bar.g2 { background: linear-gradient(180deg, #C0C0C0, #909090); }
+.lb-vert-bar.g3 { background: linear-gradient(180deg, #CD7F32, #A0522D); }
+.lb-vert-bar.g4 { background: linear-gradient(180deg, var(--brand), var(--brand-dark)); }
+
+.lb-vert-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.lb-vert-logo:hover {
+  border-color: var(--brand);
+  transform: scale(1.12);
+}
+
+.lb-vert-name {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-h);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 900px) {
+  .lb-ranks-header,
+  .lb-rank-row {
+    grid-template-columns: 44px 80px 1fr 1fr;
+  }
+
+  .lb-ranks-header .lb-metric-col:first-of-type,
+  .lb-rank-row .lb-metric-col:first-of-type,
+  .lb-ranks-header .lb-bar-col:first-of-type,
+  .lb-rank-row .lb-bar-col:first-of-type {
+    display: none;
+  }
+
+  .lb-card {
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .lb-ranks-header,
+  .lb-rank-row {
+    grid-template-columns: 40px 70px 1fr;
+  }
+
+  .lb-ranks-header .lb-bar-col,
+  .lb-rank-row .lb-bar-col,
+  .lb-ranks-header .lb-metric-col:last-of-type,
+  .lb-rank-row .lb-metric-col:last-of-type {
+    display: none;
+  }
+
+  .lb-vert-chart {
+    gap: 16px;
+  }
+
+  .lb-vert-bar {
+    width: 36px;
+  }
+
+  .lb-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .lb-vert-chart {
+    gap: 10px;
+    height: 160px;
+  }
+
+  .lb-vert-bar {
+    width: 26px;
+  }
+
+  .lb-vert-logo {
+    width: 30px;
+    height: 30px;
+  }
+}

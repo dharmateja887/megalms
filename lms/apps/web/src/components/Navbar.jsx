@@ -126,6 +126,9 @@ function Navbar() {
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </button>
+            <Link to="/leaderboard">
+              Leaderboard
+            </Link>
             {navLinks.map((link) => (
               <Link key={link.label} to={link.to}>
                 {link.label}

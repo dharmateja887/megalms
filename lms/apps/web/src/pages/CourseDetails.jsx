@@ -126,6 +126,10 @@ function PaymentModal({ course, price, onClose }) {
           <div className="cd-pay-course-info">
             <div className="cd-pay-course-title">{course.title}</div>
             <div className="cd-pay-price">₹{price.toLocaleString()}</div>
+            <div className="cd-pg-fees cd-pg-fees-modal">
+              <span>Internet handling fees (PG fees)</span>
+              <strong>₹{price.toLocaleString()}</strong>
+            </div>
           </div>
 
           <div className="cd-pay-methods">
@@ -448,34 +452,7 @@ function CourseDetails() {
                   </div>
                 </div>
 
-                <div className="cd-section-card">
-                  <h2>Reviews</h2>
-                  <div className="cd-reviews-summary">
-                    <div className="cd-reviews-score">
-                      <span className="cd-reviews-big">{rating}</span>
-                      <RatingStars rating={rating} />
-                      <span className="cd-reviews-count">Course Rating • {ratingCount.toLocaleString()} Reviews</span>
-                    </div>
-                  </div>
-                  <div className="cd-reviews-list">
-                    {[
-                      { name: 'Priya S.', rating: 5, text: 'Excellent course! Very well structured and easy to follow. The instructor explains concepts clearly.' },
-                      { name: 'Rahul M.', rating: 4, text: 'Great content and practical examples. Highly recommended for beginners.' },
-                      { name: 'Anita K.', rating: 5, text: 'One of the best courses I have taken. The assignments really help reinforce the material.' },
-                    ].map((review, i) => (
-                      <div className="cd-review-item" key={i}>
-                        <div className="cd-review-header">
-                          <div className="cd-review-avatar">{review.name[0]}</div>
-                          <div>
-                            <strong>{review.name}</strong>
-                            <div className="cd-review-stars"><RatingStars rating={review.rating} /></div>
-                          </div>
-                        </div>
-                        <p>{review.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
               </div>
 
               <div className="cd-hero-sidebar">
@@ -499,6 +476,12 @@ function CourseDetails() {
                         </>
                       )}
                     </div>
+                    {!isFree && (
+                      <div className="cd-pg-fees">
+                        <span>Internet handling fees (PG fees)</span>
+                        <strong>₹{finalPrice.toLocaleString()}</strong>
+                      </div>
+                    )}
                     {!isFree && (
                       <p className="cd-sidebar-urgency">⏰ {Math.floor(Math.random() * 5) + 2} days left at this price!</p>
                     )}

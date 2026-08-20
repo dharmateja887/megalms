@@ -20,6 +20,7 @@ import CourseDetails from './pages/CourseDetails.jsx'
 import About from './pages/About.jsx'
 import Contact from './pages/Contact.jsx'
 import SuccessStories from './pages/SuccessStories.jsx'
+import Leaderboard from './pages/Leaderboard.jsx'
 import './App.css'
 
 function isAuthed() {
@@ -33,6 +34,13 @@ function RequireAuth({ children }) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
+  return children
+}
+
+function RequireLogin({ children }) {
+  if (!isAuthed()) {
+    return <Navigate to="/login" replace />
+  }
   return children
 }
 
@@ -104,6 +112,14 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/stories" element={<SuccessStories />} />
+        <Route
+          path="/leaderboard"
+          element={
+            <RequireLogin>
+              <Leaderboard />
+            </RequireLogin>
+          }
+        />
         <Route
           path="/dashboard/*"
           element={
