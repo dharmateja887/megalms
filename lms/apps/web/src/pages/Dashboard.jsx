@@ -114,6 +114,14 @@ function Icon({ name, size = 20 }) {
           <path d="m9 18 6-6-6-6" />
         </svg>
       )
+    case 'dots':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="5" r="1.7" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="19" r="1.7" fill="currentColor" stroke="none" />
+        </svg>
+      )
     default:
       return null
   }
@@ -122,10 +130,14 @@ function Icon({ name, size = 20 }) {
 function Dashboard() {
   const [page, setPage] = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [user, setUser] = useState(readStoredUser)
   const navigate = useNavigate()
-  const user = readStoredUser()
   const displayName = getDisplayName(user)
   const initials = getUserInitials(user)
+
+  function handleUserSaved(updated) {
+    setUser(updated)
+  }
 
   function logout() {
     localStorage.removeItem('qt_nxt_user')
@@ -159,6 +171,26 @@ function Dashboard() {
         </nav>
 
         <div className="dash-sidebar-foot">
+          <div className="dash-user-chip">
+            {user.avatar ? (
+              <img className="dash-user-avatar" src={user.avatar} alt={displayName} />
+            ) : (
+              <span className="avatar dash-user-avatar">{initials}</span>
+            )}
+            <span className="dash-user-chip-name" title={displayName}>{displayName}</span>
+            <button
+              type="button"
+              className={`dash-dots-btn ${page === 'settings' ? 'active' : ''}`}
+              aria-label="Account settings"
+              title="Account settings"
+              onClick={() => {
+                setPage('settings')
+                setSidebarOpen(false)
+              }}
+            >
+              <Icon name="dots" size={18} />
+            </button>
+          </div>
           <a href="/" className="dash-nav-item">
             <span className="dash-nav-icon">
               <Icon name="grid" />
@@ -204,7 +236,11 @@ function Dashboard() {
               <span className="dash-dot" />
             </button>
             <div className="dash-user">
-              <span className="avatar">{initials}</span>
+              {user.avatar ? (
+                <img className="dash-user-avatar" src={user.avatar} alt={displayName} />
+              ) : (
+                <span className="avatar">{initials}</span>
+              )}
               <span className="dash-user-name">{displayName}</span>
               <Icon name="chevron" />
             </div>
@@ -219,7 +255,7 @@ function Dashboard() {
             {page === 'students' && <Students />}
             {page === 'sales' && <Sales />}
             {page === 'analytics' && <Analytics />}
-            {page === 'settings' && <Settings user={user} />}
+            {page === 'settings' && <Settings user={user} onSaved={handleUserSaved} />}
           </div>
         </main>
       </div>

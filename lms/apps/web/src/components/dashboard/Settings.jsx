@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getDisplayName } from '../../utils/user.js'
+import { useRef, useState } from 'react'
+import { getDisplayName, getUserInitials } from '../../utils/user.js'
 
 const payouts = [
   { label: 'Last payout', value: '₹2,40,000' },
@@ -7,14 +7,42 @@ const payouts = [
   { label: 'Payout method', value: 'UPI •••• 4231' },
 ]
 
-function Settings({ user }) {
+function Settings({ user, onSaved }) {
   const [name, setName] = useState(getDisplayName(user))
   const [email, setEmail] = useState(user.email || '')
+  const [avatar, setAvatar] = useState(user.avatar || '')
   const [bank, setBank] = useState('')
   const [saved, setSaved] = useState(false)
+  const fileRef = useRef(null)
+
+  function handleAvatarChange(e) {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setAvatar(String(reader.result || ''))
+    reader.readAsDataURL(file)
+  }
+
+  function removeAvatar() {
+    setAvatar('')
+    if (fileRef.current) fileRef.current.value = ''
+  }
 
   function handleSave(e) {
     e.preventDefault()
+    const parts = name.trim().split(/\s+/)
+    const updated = {
+      ...user,
+      firstName: parts[0] || '',
+      lastName: parts.slice(1).join(' '),
+      name: name.trim(),
+      email: email.trim(),
+      avatar,
+    }
+    try {
+      localStorage.setItem('qt_nxt_user', JSON.stringify(updated))
+    } catch {}
+    if (onSaved) onSaved(updated)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -23,8 +51,8 @@ function Settings({ user }) {
     <>
       <div className="page-head">
         <div>
-          <h1>Settings</h1>
-          <p>Update your account and payout details.</p>
+          <h1>Account settings</h1>
+          <p>Update your profile logo and name.</p>
         </div>
       </div>
 
@@ -34,6 +62,26 @@ function Settings({ user }) {
             <h3>Profile</h3>
           </div>
           <form className="settings-form" onSubmit={handleSave}>
+            <div className="avatar-upload-row">
+              {avatar ? (
+                <img className="avatar-upload-preview" src={avatar} alt="Profile logo" />
+              ) : (
+                <span className="avatar avatar-lg avatar-upload-preview">{getUserInitials({ firstName: name.split(' ')[0], lastName: name.split(' ').slice(1).join(' ') })}</span>
+              )}
+              <div className="avatar-upload-actions">
+                <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => fileRef.current && fileRef.current.click()}>
+                  Upload logo
+                </button>
+                {avatar && (
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={removeAvatar}>
+                    Remove
+                  </button>
+                )}
+                <span className="avatar-upload-hint">PNG or JPG, square works best.</span>
+              </div>
+            </div>
+
             <label className="field">
               <span>Full name</span>
               <input

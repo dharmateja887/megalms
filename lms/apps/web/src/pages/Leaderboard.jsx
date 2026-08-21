@@ -1,7 +1,156 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar.jsx'
 import Footer from '../components/Footer.jsx'
 import './Leaderboard.css'
+
+/* ────────────────────────────────────────────────────────────
+   Deterministic activity data (seeded per-date, stable reloads)
+   ──────────────────────────────────────────────────────────── */
+
+function hashString(str) {
+  let h = 2166136261
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+function mulberry32(seed) {
+  let a = seed
+  return function () {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+const QUIZ_POOL = [
+  { name: 'Python Basics', course: 'Python Mastery' },
+  { name: 'OOP Concepts', course: 'Python Mastery' },
+  { name: 'Hooks & State', course: 'React Development' },
+  { name: 'Components Lifecycle', course: 'React Development' },
+  { name: 'Statistics Refresh', course: 'Data Science' },
+  { name: 'Pandas in Practice', course: 'Data Science' },
+  { name: 'Cloud Fundamentals', course: 'Cloud Computing' },
+  { name: 'Networking Basics', course: 'Cloud Computing' },
+  { name: 'Supervised Learning', course: 'Machine Learning' },
+  { name: 'Model Evaluation', course: 'Machine Learning' },
+]
+
+const pad2 = (n) => String(n).padStart(2, '0')
+const toDateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+
+function getDayData(dateKey, isFuture) {
+  if (isFuture) {
+    return { level: 0, hours: 0, lessons: 0, quizzes: [], timeline: [] }
+  }
+  const rnd = mulberry32(hashString(`megalms-${dateKey}`))
+  const active = rnd() > 0.36
+  if (!active) {
+    return { level: 0, hours: 0, lessons: 0, quizzes: [], timeline: [] }
+  }
+
+  const hours = Math.round((0.4 + rnd() * 3.4) * 10) / 10
+  const lessons = 1 + Math.floor(rnd() * 6)
+  const quizCount = Math.floor(rnd() * 3.35)
+
+  const quizzes = []
+  const used = new Set()
+  for (let i = 0; i < quizCount; i++) {
+    let pick = QUIZ_POOL[Math.floor(rnd() * QUIZ_POOL.length)]
+    let guard = 0
+    while (used.has(pick.name) && guard++ < 10) {
+      pick = QUIZ_POOL[Math.floor(rnd() * QUIZ_POOL.length)]
+    }
+    used.add(pick.name)
+    const score = 45 + Math.floor(rnd() * 56)
+    quizzes.push({
+      id: `${dateKey}-${i}`,
+      name: pick.name,
+      course: pick.course,
+      score,
+      total: 10,
+      correct: Math.round((score / 100) * 10),
+      passed: score >= 60,
+    })
+  }
+
+  // Distribute study time across the day (6:00 – 23:00)
+  const timeline = Array.from({ length: 18 }, () => 0)
+  let remaining = hours
+  while (remaining > 0.05) {
+    const slot = Math.floor(rnd() * timeline.length)
+    const chunk = Math.min(remaining, 0.2 + rnd() * 0.5)
+    timeline[slot] += chunk
+    remaining -= chunk
+  }
+
+  const level = hours >= 3 ? 4 : hours >= 2 ? 3 : hours >= 1 ? 2 : 1
+  return { level, hours, lessons, quizzes, timeline }
+}
+
+function buildYear(year, todayStr) {
+  const months = []
+  for (let m = 0; m < 12; m++) {
+    const firstDay = new Date(year, m, 1)
+    const daysInMonth = new Date(year, m + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < firstDay.getDay(); i++) cells.push(null)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, m, d)
+      const key = toDateKey(date)
+      const isFuture = key > todayStr
+      cells.push({ day: d, key, isFuture, data: getDayData(key, isFuture) })
+    }
+    months.push({ name: firstDay.toLocaleString('en-US', { month: 'long' }), cells })
+  }
+  return months
+}
+
+function computeYearStats(months) {
+  let hours = 0
+  let activeDays = 0
+  let quizCount = 0
+  let quizScoreSum = 0
+  let bestScore = 0
+  const activeKeys = new Set()
+  months.forEach((mo) =>
+    mo.cells.forEach((c) => {
+      if (!c || c.isFuture || !c.data.hours) return
+      hours += c.data.hours
+      activeDays += 1
+      activeKeys.add(c.key)
+      c.data.quizzes.forEach((q) => {
+        quizCount += 1
+        quizScoreSum += q.score
+        bestScore = Math.max(bestScore, q.score)
+      })
+    }),
+  )
+  // Current streak: consecutive active days ending today (or yesterday)
+  let streak = 0
+  const cursor = new Date()
+  if (!activeKeys.has(toDateKey(cursor))) cursor.setDate(cursor.getDate() - 1)
+  while (activeKeys.has(toDateKey(cursor))) {
+    streak += 1
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  return {
+    hours: Math.round(hours * 10) / 10,
+    activeDays,
+    quizCount,
+    avgScore: quizCount ? Math.round(quizScoreSum / quizCount) : 0,
+    bestScore,
+    streak,
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   Rankings data (unchanged)
+   ──────────────────────────────────────────────────────────── */
 
 const overallRankings = [
   { id: 1, name: 'Aarav Sharma', logo: 'https://i.pravatar.cc/150?img=1', hours: 320, quizScore: 97 },
@@ -81,6 +230,11 @@ const maxOverallHours = Math.max(...overallRankings.map((l) => l.hours))
 const maxOverallQuiz = Math.max(...overallRankings.map((l) => l.quizScore))
 
 const rankBadge = ['🥇', '🥈', '🥉']
+const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+
+/* ────────────────────────────────────────────────────────────
+   Small UI pieces
+   ──────────────────────────────────────────────────────────── */
 
 function Logo({ src, name, size = 'md' }) {
   return (
@@ -104,10 +258,165 @@ function Fallback({ name, size = 'md' }) {
   )
 }
 
+function StatTile({ label, value, sub, accent }) {
+  return (
+    <div className={`lb-stat-tile ${accent ? 'accent' : ''}`}>
+      <span className="lb-stat-value">{value}</span>
+      <span className="lb-stat-label">{label}</span>
+      {sub && <span className="lb-stat-sub">{sub}</span>}
+    </div>
+  )
+}
+
+/* ── Day detail modal (LeetCode-style dashboard) ── */
+
+function DayDashboardModal({ day, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
+
+  const { data, key } = day
+  const dateLabel = new Date(`${key}T00:00:00`).toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
+  const maxSlot = Math.max(...data.timeline, 0.001)
+  const courseHours = useMemo(() => {
+    const map = {}
+    const pool = ['Python Mastery', 'React Development', 'Data Science', 'Cloud Computing', 'Machine Learning']
+    const rnd = mulberry32(hashString(`split-${key}`))
+    pool.forEach((c, i) => {
+      map[c] = i === pool.length - 1 ? 0 : Math.round(data.hours * rnd() * 10) / 10
+    })
+    const values = Object.values(map)
+    values[values.length - 1] = Math.max(0, Math.round((data.hours - values.slice(0, -1).reduce((a, b) => a + b, 0)) * 10) / 10)
+    return Object.entries(map).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+  }, [key, data.hours])
+
+  const fmtH = (h) => `${Math.floor(h)}h ${Math.round((h % 1) * 60)}m`
+
+  return (
+    <div className="lb-modal-overlay" onClick={onClose}>
+      <div className="lb-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`Activity dashboard for ${dateLabel}`}>
+        <div className="lb-modal-head">
+          <div>
+            <span className="lb-modal-eyebrow">Daily activity</span>
+            <h3>{dateLabel}</h3>
+          </div>
+          <div className="lb-modal-head-right">
+            <span className={`lb-day-chip lv-${data.level}`}>{data.level === 0 ? 'No activity' : `${fmtH(data.hours)} watched`}</span>
+            <button type="button" className="lb-modal-close" onClick={onClose} aria-label="Close">✕</button>
+          </div>
+        </div>
+
+        {data.level === 0 ? (
+          <div className="lb-modal-empty">
+            <span className="lb-modal-empty-icon">😴</span>
+            <h4>No activity this day</h4>
+            <p>No lessons were watched and no quizzes were attempted.</p>
+          </div>
+        ) : (
+          <div className="lb-modal-body">
+            {/* Stat tiles */}
+            <div className="lb-stat-grid">
+              <StatTile label="Hours watched" value={fmtH(data.hours)} accent />
+              <StatTile label="Lessons completed" value={data.lessons} />
+              <StatTile label="Quizzes taken" value={data.quizzes.length} />
+              <StatTile
+                label="Best quiz score"
+                value={data.quizzes.length ? `${Math.max(...data.quizzes.map((q) => q.score))}%` : '—'}
+              />
+            </div>
+
+            {/* Quiz results */}
+            <section className="lb-modal-section">
+              <h4>Quiz results</h4>
+              {data.quizzes.length === 0 ? (
+                <p className="lb-modal-none">No quizzes attempted this day.</p>
+              ) : (
+                <ul className="lb-quiz-list">
+                  {data.quizzes.map((q) => (
+                    <li key={q.id} className="lb-quiz-item">
+                      <div className="lb-quiz-info">
+                        <strong>{q.name}</strong>
+                        <span className="lb-quiz-course">{q.course}</span>
+                      </div>
+                      <div className="lb-quiz-score">
+                        <div className="lb-h-bar">
+                          <div className={`lb-h-bar-fill ${q.passed ? '' : 'fail'}`} style={{ width: `${q.score}%` }} />
+                        </div>
+                        <span className="lb-quiz-pct">{q.score}%</span>
+                        <span className={`lb-quiz-badge ${q.passed ? 'pass' : 'fail'}`}>{q.passed ? 'Passed' : 'Failed'}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <div className="lb-modal-cols">
+              {/* Course-wise hours */}
+              <section className="lb-modal-section">
+                <h4>Hours by course</h4>
+                <ul className="lb-course-hours">
+                  {courseHours.map(([course, hrs]) => (
+                    <li key={course}>
+                      <span className="lb-ch-name">{course}</span>
+                      <div className="lb-h-bar">
+                        <div className="lb-h-bar-fill" style={{ width: `${(hrs / data.hours) * 100}%` }} />
+                      </div>
+                      <span className="lb-ch-val">{fmtH(hrs)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* Study timeline */}
+              <section className="lb-modal-section">
+                <h4>Study timeline</h4>
+                <div className="lb-timeline">
+                  {data.timeline.map((v, i) => (
+                    <div className="lb-timeline-col" key={i} title={`${6 + i}:00 — ${Math.round(v * 60)} min`}>
+                      <div className="lb-timeline-bar" style={{ height: `${Math.max(4, (v / maxSlot) * 100)}%`, opacity: v > 0 ? 1 : 0.15 }} />
+                      <span className="lb-timeline-hour">{i % 3 === 0 ? `${6 + i}` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+                <span className="lb-timeline-note">Time of day (24h)</span>
+              </section>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────────────────────
+   Page
+   ──────────────────────────────────────────────────────────── */
+
 function Leaderboard() {
   const [clicked, setClicked] = useState({})
+  const today = new Date()
+  const todayKey = toDateKey(today)
+  const [year, setYear] = useState(today.getFullYear())
+  const [selectedDay, setSelectedDay] = useState(null)
+
+  const months = useMemo(() => buildYear(year, todayKey), [year, todayKey])
+  const stats = useMemo(() => computeYearStats(months), [months])
 
   const toggle = (key) => setClicked((p) => ({ ...p, [key]: !p[key] }))
+  const minYear = 2025
 
   return (
     <>
@@ -119,7 +428,96 @@ function Leaderboard() {
             <div className="section-head center">
               <span className="eyebrow">Rankings</span>
               <h2>Leaderboard</h2>
-              <p>Top performers ranked by quiz scores and course hours watched.</p>
+              <p>Your learning activity across the year — click any date to open its dashboard.</p>
+            </div>
+
+            {/* ── Year summary (LeetCode-style) ── */}
+            <div className="lb-card">
+              <div className="lb-card-head">
+                <h3>{year} Summary</h3>
+                <span className="lb-badge">{stats.activeDays} active days</span>
+              </div>
+              <div className="lb-stat-grid">
+                <StatTile label="Total hours watched" value={`${stats.hours}h`} accent />
+                <StatTile label="Quizzes taken" value={stats.quizCount} />
+                <StatTile label="Average quiz score" value={`${stats.avgScore}%`} />
+                <StatTile label="Best quiz score" value={stats.bestScore ? `${stats.bestScore}%` : '—'} />
+                <StatTile label="Active days" value={stats.activeDays} />
+                <StatTile label="Current streak" value={`${stats.streak} 🔥`} />
+              </div>
+            </div>
+
+            {/* ── Activity calendar ── */}
+            <div className="lb-card">
+              <div className="lb-card-head">
+                <h3>Activity Calendar</h3>
+                <div className="lb-year-nav">
+                  <button
+                    type="button"
+                    onClick={() => setYear((y) => y - 1)}
+                    disabled={year <= minYear}
+                    aria-label="Previous year"
+                  >
+                    ‹
+                  </button>
+                  <span className="lb-year-value">{year}</span>
+                  <button
+                    type="button"
+                    onClick={() => setYear((y) => Math.min(y + 1, today.getFullYear()))}
+                    disabled={year >= today.getFullYear()}
+                    aria-label="Next year"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+
+              <div className="lb-cal-legend">
+                <span>Less</span>
+                <span className="lb-day lv-0" />
+                <span className="lb-day lv-1" />
+                <span className="lb-day lv-2" />
+                <span className="lb-day lv-3" />
+                <span className="lb-day lv-4" />
+                <span>More</span>
+              </div>
+
+              <div className="lb-cal-grid">
+                {months.map((month) => (
+                  <div className="lb-month-box" key={month.name}>
+                    <h4 className="lb-month-name">{month.name}</h4>
+                    <div className="lb-month-weekdays">
+                      {WEEKDAYS.map((w) => (
+                        <span key={w}>{w}</span>
+                      ))}
+                    </div>
+                    <div className="lb-month-days">
+                      {month.cells.map((cell, i) =>
+                        cell === null ? (
+                          <span className="lb-day blank" key={`b${i}`} />
+                        ) : (
+                          <button
+                            type="button"
+                            key={cell.key}
+                            className={`lb-day lv-${cell.data.level}${cell.isFuture ? ' future' : ''}${cell.key === todayKey ? ' today' : ''}`}
+                            title={
+                              cell.isFuture
+                                ? `${cell.day} ${month.name} — upcoming`
+                                : cell.data.level === 0
+                                  ? `${cell.day} ${month.name} — no activity`
+                                  : `${cell.day} ${month.name} — ${cell.data.hours}h · ${cell.data.quizzes.length} quiz${cell.data.quizzes.length === 1 ? '' : 'zes'}`
+                            }
+                            disabled={cell.isFuture}
+                            onClick={() => setSelectedDay(cell)}
+                          >
+                            {cell.day}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* ── Overall Rankings ── */}
@@ -150,10 +548,7 @@ function Leaderboard() {
                         {i < 3 ? <span className="lb-medal">{rankBadge[i]}</span> : `#${i + 1}`}
                       </span>
                       <span className="lb-profile-col">
-                        <div
-                          className="lb-avatar-wrap"
-                          onClick={() => toggle(k)}
-                        >
+                        <div className="lb-avatar-wrap" onClick={() => toggle(k)}>
                           <Logo src={person.logo} name={person.name} />
                           <Fallback name={person.name} />
                         </div>
@@ -186,7 +581,6 @@ function Leaderboard() {
             {/* ── Per-Course Sections ── */}
             {courseData.map((c) => {
               const maxH = Math.max(...c.performers.map((p) => p.hours))
-              const maxQ = Math.max(...c.performers.map((p) => p.quizScore))
               return (
                 <div className="lb-card" key={c.id}>
                   <div className="lb-card-head">
@@ -194,7 +588,6 @@ function Leaderboard() {
                     <span className="lb-badge">Top {c.performers.length} Performers</span>
                   </div>
 
-                  {/* Vertical Bars - Quiz Score */}
                   <div className="lb-vert-section">
                     <h4 className="lb-vert-label">Quiz Scores</h4>
                     <div className="lb-vert-chart">
@@ -219,7 +612,6 @@ function Leaderboard() {
                     </div>
                   </div>
 
-                  {/* Vertical Bars - Hours Watched */}
                   <div className="lb-vert-section">
                     <h4 className="lb-vert-label">Hours Watched</h4>
                     <div className="lb-vert-chart">
@@ -251,6 +643,8 @@ function Leaderboard() {
         </section>
       </main>
       <Footer />
+
+      {selectedDay && <DayDashboardModal day={selectedDay} onClose={() => setSelectedDay(null)} />}
     </>
   )
 }

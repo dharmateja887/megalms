@@ -629,7 +629,8 @@ function PlayableVideo({
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const directThumbnail = useDirectVideoThumbnail(source.kind === "direct" ? source.url : null);
-  const thumbnailUrl = source.thumbnailUrl || directThumbnail || "";
+  const thumbnailUrl =
+    ("thumbnailUrl" in source ? source.thumbnailUrl : undefined) || directThumbnail || "";
 
   useEffect(() => {
     setIsPlaying(false);

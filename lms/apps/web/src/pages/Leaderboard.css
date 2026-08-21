@@ -347,3 +347,562 @@
     height: 30px;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   Activity Calendar
+   ════════════════════════════════════════════════════════════ */
+
+.lb-year-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lb-year-nav button {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-h);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+}
+
+.lb-year-nav button:hover:not(:disabled) {
+  border-color: var(--brand);
+  background: var(--brand-light);
+}
+
+.lb-year-nav button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.lb-year-value {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+  min-width: 52px;
+  text-align: center;
+}
+
+.lb-cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.lb-cal-legend .lb-day {
+  cursor: default;
+  pointer-events: none;
+}
+
+.lb-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.lb-month-box {
+  background: #f9fbfe;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.lb-month-name {
+  font-family: var(--display);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-h);
+  margin-bottom: 10px;
+}
+
+.lb-month-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.lb-month-weekdays span {
+  text-align: center;
+  font-family: var(--display);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text);
+}
+
+.lb-month-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.lb-day {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #eef2f7;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0;
+  cursor: default;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+
+button.lb-day {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+button.lb-day:not(.future):hover {
+  transform: scale(1.14);
+  box-shadow: 0 3px 10px rgba(30, 40, 90, 0.18);
+  z-index: 2;
+  position: relative;
+}
+
+.lb-day.blank {
+  background: transparent;
+}
+
+.lb-day.future {
+  background: #f4f6fa;
+  color: #c3cad6;
+  cursor: not-allowed;
+}
+
+.lb-day.lv-0 { background: #eef2f7; }
+.lb-day.lv-1 { background: #d4ecfb; color: #1b5e8a; }
+.lb-day.lv-2 { background: #a5d8f5; color: #14486b; }
+.lb-day.lv-3 { background: #5db9ea; color: #fff; }
+.lb-day.lv-4 { background: linear-gradient(135deg, var(--brand-dark), var(--brand)); color: #fff; }
+
+.lb-day.today {
+  border-color: var(--text-h);
+  box-shadow: inset 0 0 0 1.5px var(--text-h);
+}
+
+/* ════════════════════════════════════════════════════════════
+   Stat tiles
+   ════════════════════════════════════════════════════════════ */
+
+.lb-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.lb-stat-tile {
+  background: #f9fbfe;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.lb-stat-tile.accent {
+  background: linear-gradient(135deg, var(--brand-light), #fff);
+  border-color: #cfe6ff;
+}
+
+.lb-stat-value {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-h);
+}
+
+.lb-stat-label {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.lb-stat-sub {
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.75;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Day dashboard modal
+   ════════════════════════════════════════════════════════════ */
+
+.lb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: lb-fade-in 0.18s ease-out;
+}
+
+@keyframes lb-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lb-modal {
+  background: #fff;
+  border-radius: 20px;
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.28);
+  animation: lb-pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lb-pop-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.lb-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+  color: #fff;
+  padding: 22px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.lb-modal-head h3 {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.lb-modal-eyebrow {
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.85;
+}
+
+.lb-modal-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lb-day-chip {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  white-space: nowrap;
+}
+
+.lb-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.lb-modal-close:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.lb-modal-body {
+  padding: 22px 26px 26px;
+}
+
+.lb-modal-section {
+  margin-top: 22px;
+}
+
+.lb-modal-section h4 {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.lb-modal-none {
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+.lb-modal-empty {
+  padding: 56px 24px;
+  text-align: center;
+}
+
+.lb-modal-empty-icon {
+  font-size: 44px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.lb-modal-empty h4 {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-h);
+  margin-bottom: 6px;
+}
+
+.lb-modal-empty p {
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+.lb-modal-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Quiz results list */
+
+.lb-quiz-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lb-quiz-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #f9fbfe;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.lb-quiz-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lb-quiz-info strong {
+  font-size: 13.5px;
+  color: var(--text-h);
+}
+
+.lb-quiz-course {
+  font-size: 11.5px;
+  color: var(--brand-dark);
+  background: var(--brand-light);
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.lb-quiz-score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lb-quiz-score .lb-h-bar {
+  width: 110px;
+}
+
+.lb-quiz-pct {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+  min-width: 38px;
+  text-align: right;
+}
+
+.lb-quiz-badge {
+  font-family: var(--display);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.lb-quiz-badge.pass {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.lb-quiz-badge.fail {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.lb-h-bar-fill.fail {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+/* Hours by course */
+
+.lb-course-hours {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lb-course-hours li {
+  display: grid;
+  grid-template-columns: 118px 1fr 58px;
+  align-items: center;
+  gap: 10px;
+}
+
+.lb-ch-name {
+  font-size: 12px;
+  color: var(--text-h);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-ch-val {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-h);
+  text-align: right;
+}
+
+/* Study timeline */
+
+.lb-timeline {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  padding-bottom: 4px;
+}
+
+.lb-timeline-col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.lb-timeline-bar {
+  width: 100%;
+  max-width: 18px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--brand), var(--brand-dark));
+  min-height: 4px;
+}
+
+.lb-timeline-hour {
+  font-size: 9px;
+  color: var(--text);
+  height: 12px;
+}
+
+.lb-timeline-note {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text);
+  margin-top: 6px;
+}
+
+/* ── Calendar & modal responsive ── */
+
+@media (max-width: 1100px) {
+  .lb-cal-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .lb-stat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .lb-cal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lb-modal-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-quiz-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lb-quiz-score {
+    justify-content: space-between;
+  }
+
+  .lb-quiz-score .lb-h-bar {
+    flex: 1;
+  }
+}
+
+@media (max-width: 520px) {
+  .lb-cal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lb-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lb-course-hours li {
+    grid-template-columns: 96px 1fr 52px;
+  }
+
+  .lb-modal-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   FaArrowLeft,
   FaBookOpen,
@@ -49,6 +49,25 @@ const typeIcons = {
   form: FaPenFancy,
 }
 
+const ENROLL_KEY = 'lms_enrolled_course_ids'
+
+export function getEnrolledIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ENROLL_KEY) || '[]')
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+export function addEnrolledId(id) {
+  const ids = getEnrolledIds()
+  if (!ids.includes(id)) {
+    ids.push(id)
+    try { localStorage.setItem(ENROLL_KEY, JSON.stringify(ids)) } catch {}
+  }
+}
+
 function RatingStars({ rating }) {
   const full = Math.floor(rating)
   const hasHalf = rating - full >= 0.3
@@ -64,7 +83,7 @@ function RatingStars({ rating }) {
   )
 }
 
-function PaymentModal({ course, price, onClose }) {
+function PaymentModal({ course, price, onClose, onEnroll }) {
   const [method, setMethod] = useState('upi')
   const [processing, setProcessing] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -80,6 +99,7 @@ function PaymentModal({ course, price, onClose }) {
         description: `Enroll in ${course.title}`,
         handler: () => {
           setProcessing(false)
+          onEnroll()
           setSuccess(true)
         },
         prefill: {},
@@ -90,12 +110,12 @@ function PaymentModal({ course, price, onClose }) {
         rzp.on('payment.failed', () => setProcessing(false))
         rzp.open()
       } catch {
-        setTimeout(() => { setProcessing(false); setSuccess(true) }, 1500)
+        setTimeout(() => { setProcessing(false); onEnroll(); setSuccess(true) }, 1500)
       }
     } else {
-      setTimeout(() => { setProcessing(false); setSuccess(true) }, 1500)
+      setTimeout(() => { setProcessing(false); onEnroll(); setSuccess(true) }, 1500)
     }
-  }, [course, price])
+  }, [course, price, onEnroll])
 
   if (success) {
     return (
@@ -244,12 +264,14 @@ function PaymentModal({ course, price, onClose }) {
 
 function CourseDetails() {
   const { courseId } = useParams()
+  const navigate = useNavigate()
   const [course, setCourse] = useState(null)
   const [allCourses, setAllCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [expandedChapters, setExpandedChapters] = useState({})
   const [showPayModal, setShowPayModal] = useState(false)
+  const [enrolledIds, setEnrolledIds] = useState(getEnrolledIds)
 
   useEffect(() => {
     let cancelled = false
@@ -272,6 +294,30 @@ function CourseDetails() {
 
   const toggleChapter = (id) => {
     setExpandedChapters((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const isEnrolled = enrolledIds.includes(Number(courseId))
+
+  const enrollFree = () => {
+    addEnrolledId(Number(courseId))
+    setEnrolledIds(getEnrolledIds())
+  }
+
+  // Free (or already enrolled) courses open instantly — no payment step.
+  const handleEnrollClick = () => {
+    if (isFree || isEnrolled) {
+      if (!isEnrolled) enrollFree()
+      navigate(`/course/${courseId}/learn`)
+    } else {
+      setShowPayModal(true)
+    }
+  }
+
+  // Clicking any lesson in the course content table opens it directly for free/enrolled learners.
+  const handleLessonClick = (itemId) => {
+    if (!isFree && !isEnrolled) return
+    if (!isEnrolled) enrollFree()
+    navigate(`/course/${courseId}/learn?item=${itemId}`)
   }
 
   if (loading) {
@@ -436,11 +482,18 @@ function CourseDetails() {
                             <ul className="cd-chapter-acc-items">
                               {items.map((item) => {
                                 const Icon = typeIcons[item.type] || FaFileAlt
+                                const canOpen = isFree || isEnrolled
                                 return (
-                                  <li key={item.id}>
+                                  <li
+                                    key={item.id}
+                                    className={canOpen ? 'cd-item-clickable' : ''}
+                                    title={canOpen ? 'Open lesson' : undefined}
+                                    onClick={canOpen ? () => handleLessonClick(item.id) : undefined}
+                                  >
                                     <Icon className="cd-item-icon" />
                                     <span className="cd-item-title">{item.title}</span>
                                     {item.duration && <span className="cd-item-duration">{item.duration} min</span>}
+                                    {canOpen && <FaPlay className="cd-item-play" />}
                                   </li>
                                 )
                               })}
@@ -485,9 +538,12 @@ function CourseDetails() {
                     {!isFree && (
                       <p className="cd-sidebar-urgency">⏰ {Math.floor(Math.random() * 5) + 2} days left at this price!</p>
                     )}
-                    <button type="button" className="btn btn-primary cd-enroll-btn" onClick={() => setShowPayModal(true)}>
-                      {isFree ? 'Enroll for Free' : 'Buy this course'}
+                    <button type="button" className="btn btn-primary cd-enroll-btn" onClick={handleEnrollClick}>
+                      {isEnrolled ? 'Go to course' : isFree ? 'Enroll for Free' : 'Buy this course'}
                     </button>
+                    {isFree && !isEnrolled && (
+                      <p className="cd-free-note">No payment needed — enroll instantly and start learning.</p>
+                    )}
                     <p className="cd-sidebar-guarantee">30-Day Money-Back Guarantee</p>
 
                     <div className="cd-sidebar-features">
@@ -534,7 +590,17 @@ function CourseDetails() {
         </section>
       </main>
       <Footer />
-      {showPayModal && <PaymentModal course={course} price={isFree ? 0 : finalPrice} onClose={() => setShowPayModal(false)} />}
+      {showPayModal && !isFree && (
+        <PaymentModal
+          course={course}
+          price={finalPrice}
+          onClose={() => setShowPayModal(false)}
+          onEnroll={() => {
+            addEnrolledId(Number(courseId))
+            setEnrolledIds(getEnrolledIds())
+          }}
+        />
+      )}
     </>
   )
 }

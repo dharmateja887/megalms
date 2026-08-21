@@ -18,6 +18,7 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useCourses, type Course } from "../context/CourseContext";
@@ -44,7 +45,7 @@ function relativeTime(timestamp: number): string {
   return `${years} year${years > 1 ? "s" : ""} ago`;
 }
 
-function CourseCard({ course, onOpen, onOpenBuilder, onPreview }: { course: Course; onOpen: () => void; onOpenBuilder: () => void; onPreview: () => void }) {
+function CourseCard({ course, onOpen, onOpenInfo, onOpenBuilder, onPreview, onDelete }: { course: Course; onOpen: () => void; onOpenInfo: () => void; onOpenBuilder: () => void; onPreview: () => void; onDelete: () => void }) {
   const cover = course.cover ?? covers[course.id % covers.length];
   const isFree = course.pricing?.planType === "FREE";
   const mrp = Number(course.pricing?.mrp);
@@ -118,11 +119,12 @@ function CourseCard({ course, onOpen, onOpenBuilder, onPreview }: { course: Cour
         </div>
       </div>
       <div className="bg-gray-50 px-3.5 py-2 border-t border-gray-100 flex items-center justify-around">
-        <button onClick={onOpen} className="p-1.5 text-gray-600 hover:text-indigo-900 hover:bg-white transition-colors" title="Details"><Info size={15} /></button>
+        <button onClick={onOpenInfo} className="p-1.5 text-gray-600 hover:text-indigo-900 hover:bg-white transition-colors" title="Details"><Info size={15} /></button>
         <button onClick={onOpenBuilder} className="p-1.5 text-gray-600 hover:text-indigo-900 hover:bg-white transition-colors" title="Course Builder"><Wrench size={15} /></button>
         <button className="p-1.5 text-gray-600 hover:text-indigo-900 hover:bg-white transition-colors" title="Landing Page Design"><Brush size={15} /></button>
         <button className="p-1.5 text-gray-600 hover:text-indigo-900 hover:bg-white transition-colors" title="Learners"><Users size={15} /></button>
         <button onClick={onPreview} className="p-1.5 text-gray-600 hover:text-indigo-900 hover:bg-white transition-colors" title="Course Preview"><Eye size={15} /></button>
+        <button onClick={onDelete} className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-white transition-colors" title="Delete course"><Trash2 size={15} /></button>
         <button className="p-1.5 text-gray-600 hover:text-indigo-900 hover:bg-white transition-colors" title="Course Discussions"><MessageSquare size={15} /></button>
       </div>
     </div>
@@ -130,11 +132,12 @@ function CourseCard({ course, onOpen, onOpenBuilder, onPreview }: { course: Cour
 }
 
 export function CoursesView() {
-  const { courses, startNewCourse, loading } = useCourses();
+  const { courses, startNewCourse, loading, deleteCourse } = useCourses();
   const navigate = useNavigate();
   const [isPublishedModalOpen, setIsPublishedModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteCourseId, setDeleteCourseId] = useState<number | null>(null);
 
   const openCourse = (id: number) => navigate(`/courses/${id}`);
 
@@ -223,9 +226,11 @@ export function CoursesView() {
           <CourseCard
             key={course.id}
             course={course}
-            onOpen={() => openCourse(course.id)}
+            onOpen={() => navigate(`/courses/${course.id}/learn`)}
+            onOpenInfo={() => openCourse(course.id)}
             onOpenBuilder={() => navigate(`/courses/${course.id}/builder`)}
             onPreview={() => navigate(`/courses/${course.id}/preview`)}
+            onDelete={() => setDeleteCourseId(course.id)}
           />
         ))}
       </div>
@@ -306,6 +311,44 @@ export function CoursesView() {
                   Done
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE COURSE CONFIRM MODAL */}
+      {deleteCourseId != null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md bg-white shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-gray-900">Delete course</h3>
+              <button onClick={() => setDeleteCourseId(null)} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to permanently delete{" "}
+                <b className="text-gray-900">{courses.find((c) => c.id === deleteCourseId)?.title}</b>? This
+                cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3 px-6 pb-6">
+              <button
+                onClick={() => setDeleteCourseId(null)}
+                className="border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  deleteCourse(deleteCourseId);
+                  setDeleteCourseId(null);
+                }}
+                className="bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

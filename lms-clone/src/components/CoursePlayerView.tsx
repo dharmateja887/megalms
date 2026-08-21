@@ -39,7 +39,7 @@ const itemTypeIcons: Record<string, LucideIcon> = {
   form: ClipboardCheck,
 };
 
-export function CoursePlayerView() {
+export function CoursePlayerView({ initialItemId }: { initialItemId?: number | null } = {}) {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { courses, loading } = useCourses();
@@ -54,19 +54,29 @@ export function CoursePlayerView() {
 
   useEffect(() => {
     if (!course) return;
-    const first = course.chapters[0];
-    const firstVideoItem = course.chapters.flatMap((ch) => ch.items).find((it) => it.type === "video" && (it.fileData || it.url));
-    if (firstVideoItem) {
-      const parentChapter = course.chapters.find((ch) => ch.items.some((it) => it.id === firstVideoItem.id));
+    const targetItem =
+      initialItemId != null
+        ? course.chapters.flatMap((ch) => ch.items).find((it) => it.id === initialItemId)
+        : undefined;
+    if (targetItem) {
+      const parentChapter = course.chapters.find((ch) => ch.items.some((it) => it.id === targetItem.id));
       if (parentChapter) setActiveChapterId(parentChapter.id);
-      setActiveItemId(firstVideoItem.id);
+      setActiveItemId(targetItem.id);
     } else {
-      setActiveChapterId(first?.id ?? null);
-      setActiveItemId(first?.items[0]?.id ?? null);
+      const first = course.chapters[0];
+      const firstVideoItem = course.chapters.flatMap((ch) => ch.items).find((it) => it.type === "video" && (it.fileData || it.url));
+      if (firstVideoItem) {
+        const parentChapter = course.chapters.find((ch) => ch.items.some((it) => it.id === firstVideoItem.id));
+        if (parentChapter) setActiveChapterId(parentChapter.id);
+        setActiveItemId(firstVideoItem.id);
+      } else {
+        setActiveChapterId(first?.id ?? null);
+        setActiveItemId(first?.items[0]?.id ?? null);
+      }
     }
     setCompletedIds([]);
     setExpandedChapters(course.chapters.map((ch) => ch.id));
-  }, [course?.id]);
+  }, [course?.id, initialItemId]);
 
   if (loading) {
     return (
