@@ -93,6 +93,7 @@ export function CourseLandingView() {
   const handleEnrollClick = () => {
     if (isFree) {
       enroll(course.id);
+      navigate(`/courses/${course.id}/learn`);
     } else {
       setShowCheckout(true);
     }
@@ -274,7 +275,7 @@ export function CourseLandingView() {
                   : "bg-indigo-950 hover:bg-indigo-900"
               }`}
             >
-              {isFree ? "Enroll for Free" : "Enroll"}
+              {isFree ? "Go to course" : "Enroll"}
             </button>
             <p className="text-center text-xs text-neutral-500">
               {isFree
@@ -325,6 +326,7 @@ export function CourseLandingView() {
                 onClick={() => {
                   enroll(course.id);
                   setShowCheckout(false);
+                  navigate(`/courses/${course.id}/learn`);
                 }}
                 className="w-full bg-indigo-950 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-900"
               >

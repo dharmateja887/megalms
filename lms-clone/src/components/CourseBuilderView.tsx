@@ -146,8 +146,13 @@ export function CourseBuilderView() {
       setCourseTitleError("A course with this title already exists.");
       return;
     }
-    await saveCourse();
+    const savedId = await saveCourse();
+    if (savedId == null) return;
+
     setShowToast(true);
+    setTimeout(() => {
+      navigate(`/courses/${savedId}/preview`);
+    }, 1200);
   };
 
   const handleSetUserPreview = async () => {
